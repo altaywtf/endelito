@@ -6,7 +6,8 @@ This repo is small. Keep the top level navigational and put implementation detai
 
 - [README](README.md) explains the user-facing shape and fastest build path.
 - [Architecture](docs/ARCHITECTURE.md) explains the CLI, menu bar app, URL scheme, state file, and WebKit control model.
-- [Contributing](CONTRIBUTING.md) lists local validation, release, and branch-policy expectations.
+- [Distribution](docs/DISTRIBUTION.md) explains CI, release, and GitHub policy.
+- [Contributing](CONTRIBUTING.md) lists local validation and PR expectations.
 - [Security](SECURITY.md) covers reporting and privacy expectations.
 
 ## Repo Rules
@@ -18,9 +19,7 @@ This repo is small. Keep the top level navigational and put implementation detai
 - The WebKit compatibility bridge lives in [EndelitoBridge.js](app/Resources/EndelitoBridge.js); keep substantial page JavaScript out of Swift string literals.
 - App icons are generated from [GenerateAssets.swift](tools/GenerateAssets.swift); update the generator rather than editing generated PNG or ICNS files.
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
-- This is a release repo, not a deploy repo: GitHub Actions verifies normal pushes/PRs, and semantic-release publishes GitHub Releases from Conventional Commits on `main`.
-- Keep `main` protected with required conversation resolution; do not add deploy environments for this release-only path.
-- Keep GitHub branch policy details in [Contributing](CONTRIBUTING.md), not repeated across docs.
+- This is a release repo, not a deploy repo; keep GitHub policy details in [Distribution](docs/DISTRIBUTION.md), not repeated across docs.
 - Dependabot tracks GitHub Actions and Go module updates through `.github/dependabot.yml`; keep action refs SHA-pinned with same-line version comments so update PRs can refresh them safely.
 - Keep GitHub collaboration files boring: PRs use the repo template, security reports stay private through `SECURITY.md`, and issue templates should not duplicate policy docs.
 

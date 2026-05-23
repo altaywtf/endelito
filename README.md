@@ -26,13 +26,6 @@ The app bundle includes generated icons:
 - `AppIcon.icns` for Finder/app identity
 - `MenuBarIconTemplate.png` for the macOS menu bar
 
-## Docs
-
-- [Contributing](CONTRIBUTING.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Security](SECURITY.md)
-- [Agent guide](AGENTS.md)
-
 ## Use
 
 ```sh
@@ -77,3 +70,11 @@ make doctor
 ```
 
 GitHub Actions runs the same verify gate on `macos-latest`. Pushes to `main` then run semantic-release and publish a GitHub Release when Conventional Commits produce a new version.
+
+## Docs
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Distribution](docs/DISTRIBUTION.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+- [Agent guide](AGENTS.md)

@@ -25,7 +25,7 @@ The Swift app owns the WebKit session and player window. It is an accessory app 
 - Live smoke: `make smoke-live` launches the app, drives source/play/pause commands through the CLI and URL scheme, checks state updates, and quits the app.
 - Doctor: `make doctor` reports required local tools, build artifacts, running process state, and state-file validity.
 - CI: `.github/workflows/ci.yml` runs `make verify` on `macos-latest` for normal pushes and pull requests.
-- Release: pushes to `main` run semantic-release and attach the packaged macOS app plus CLI zip to GitHub Releases.
+- Distribution: [Distribution](DISTRIBUTION.md) describes release packaging and GitHub policy.
 
 ## WebView
 
