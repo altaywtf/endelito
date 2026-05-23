@@ -47,6 +47,8 @@ make smoke-live
 
 Commits on `main` use Conventional Commits. The CI workflow runs `make verify` and then semantic-release creates GitHub Releases when commit history warrants a version. Release-only Node tooling is pinned in the workflow instead of committed as repo dependencies.
 
+Dependabot checks GitHub Actions and Go modules weekly. Keep workflow actions pinned to full commit SHAs with same-line version comments.
+
 Release assets are built by:
 
 ```sh
