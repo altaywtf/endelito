@@ -20,7 +20,7 @@ This repo is small. Keep the top level navigational and put implementation detai
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
 - This is a release repo, not a deploy repo: GitHub Actions verifies normal pushes/PRs, and semantic-release publishes GitHub Releases from Conventional Commits on `main`.
 - Keep `main` protected with required conversation resolution; do not add deploy environments for this release-only path.
-- Semantic-release writes `VERSION` back to `main` with a `chore(release): ... [skip ci]` commit; do not add required status checks, pull-request reviews, or push restrictions unless that bump path is redesigned first.
+- Keep GitHub branch policy details in [Contributing](CONTRIBUTING.md), not repeated across docs.
 - Dependabot tracks GitHub Actions and Go module updates through `.github/dependabot.yml`; keep action refs SHA-pinned with same-line version comments so update PRs can refresh them safely.
 - Keep GitHub collaboration files boring: PRs use the repo template, security reports stay private through `SECURITY.md`, and issue templates should not duplicate policy docs.
 
