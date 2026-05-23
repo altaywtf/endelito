@@ -81,11 +81,15 @@ func sendCommand(command string) error {
 }
 
 func launchApp() error {
+	appPath := os.Getenv("ENDELITO_APP")
+	if appPath != "" {
+		return open("-n", appPath)
+	}
+
 	if err := open("-b", appBundleID); err == nil {
 		return nil
 	}
 
-	appPath := os.Getenv("ENDELITO_APP")
 	if appPath == "" {
 		executable, err := os.Executable()
 		if err != nil {
@@ -95,7 +99,7 @@ func launchApp() error {
 		appPath = filepath.Join(filepath.Dir(filepath.Dir(executable)), "build", appName+".app")
 	}
 
-	return open(appPath)
+	return open("-n", appPath)
 }
 
 func printStatus() error {

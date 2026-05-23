@@ -13,7 +13,7 @@ The shape is intentionally boring: one WebKit session, one menu bar app, one CLI
 ## Build
 
 ```sh
-make build-cli build-app
+make build
 ```
 
 Outputs:
@@ -59,3 +59,13 @@ Sign-in persists across app restarts through WebKit's default website data store
 The app registers the `endelito://` URL scheme. Commands like `bin/endelito play` send `endelito://play`; the Swift app receives the URL and forwards the action into the WebView.
 
 See [Architecture](docs/ARCHITECTURE.md) for the current control model and limitations.
+
+## Verify
+
+```sh
+make verify
+```
+
+`make verify` runs Go tests, builds the CLI and app, and checks the app bundle, URL scheme, icons, and CLI help. On a local macOS GUI session, `make smoke-live` also launches the app and checks that it writes state.
+
+GitHub Actions runs the same verify gate on `macos-latest`. Pushes to `main` then run semantic-release and publish a GitHub Release when Conventional Commits produce a new version.

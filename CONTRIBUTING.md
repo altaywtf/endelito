@@ -9,8 +9,7 @@
 ## Build
 
 ```sh
-make build-cli
-make build-app
+make build
 ```
 
 Outputs:
@@ -35,16 +34,23 @@ Do not replace the player data store with `.nonPersistent()` or a per-launch cus
 Run these before pushing:
 
 ```sh
-go test ./...
-make build-cli
-make build-app
+make verify
 ```
 
 For UI changes, also launch the app and check the real state path:
 
 ```sh
-bin/endelito launch
-bin/endelito status
+make smoke-live
+```
+
+## Release
+
+Commits on `main` use Conventional Commits. The CI workflow runs `make verify` and then semantic-release creates GitHub Releases when commit history warrants a version. Release-only Node tooling is pinned in the workflow instead of committed as repo dependencies.
+
+Release assets are built by:
+
+```sh
+scripts/package-release.sh
 ```
 
 ## Development Notes

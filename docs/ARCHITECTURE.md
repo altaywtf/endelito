@@ -17,6 +17,14 @@ The Swift app owns the WebKit session and player window. It is an accessory app 
 4. The app updates local playback state and sends the command into the WebView.
 5. `bin/endelito status` reads `~/Library/Application Support/Endelito/state.json`.
 
+## Readiness
+
+- Boot: `make run` builds the CLI and app, then launches the menu bar app.
+- Smoke: `make smoke` checks the built CLI, app bundle, URL scheme, menu-bar flag, and generated icons.
+- Live smoke: `make smoke-live` launches the app, waits for the state file, reads status, and quits the app.
+- CI: `.github/workflows/ci.yml` runs `make verify` on `macos-latest`.
+- Release: pushes to `main` run semantic-release and attach the packaged macOS app plus CLI zip to GitHub Releases.
+
 ## WebView
 
 The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps login/session state in WebKit-managed storage for this app, keyed by the app identity. Rebuilding `Endelito.app` with the same bundle identifier keeps using the same WebKit session store.

@@ -17,13 +17,14 @@ This repo is small. Keep the top level navigational and put implementation detai
 - Generated build outputs stay out of git: `bin/`, `build/`, and generated app resources.
 - App icons are generated from [GenerateAssets.swift](tools/GenerateAssets.swift); update the generator rather than editing generated PNG or ICNS files.
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
+- This is a release repo, not a deploy repo: GitHub Actions verifies every push/PR and semantic-release publishes GitHub Releases from Conventional Commits on `main`.
 
 ## Verification
 
 Use the repo guardrails before committing:
 
 ```sh
-go test ./...
-make build-cli
-make build-app
+make verify
 ```
+
+Use `make smoke-live` when a macOS GUI session is available and you need to prove the app launches and writes state.

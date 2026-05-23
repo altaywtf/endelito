@@ -7,7 +7,9 @@ CONTENTS_DIR := $(APP_DIR)/Contents
 MACOS_DIR := $(CONTENTS_DIR)/MacOS
 RESOURCES_DIR := $(CONTENTS_DIR)/Resources
 
-.PHONY: build-cli build-app clean-app
+.PHONY: build build-cli build-app run smoke smoke-live verify clean clean-app
+
+build: build-cli build-app
 
 build-cli:
 	mkdir -p "$(BIN_DIR)"
@@ -22,6 +24,22 @@ build-app:
 	xcrun swiftc -Osize -framework AppKit -framework WebKit -o "$(MACOS_DIR)/$(EXECUTABLE)" app/Sources/Endelito/main.swift
 	codesign --force --sign - "$(APP_DIR)"
 	du -sh "$(APP_DIR)"
+
+run: build
+	"$(BIN_DIR)/endelito" launch
+
+smoke: build
+	scripts/smoke.sh
+
+smoke-live: build
+	ENDELITO_SMOKE_LAUNCH=1 scripts/smoke.sh
+
+verify:
+	go test ./...
+	$(MAKE) smoke
+
+clean: clean-app
+	rm -rf "$(BIN_DIR)"
 
 clean-app:
 	rm -rf "$(APP_DIR)"
