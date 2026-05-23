@@ -15,6 +15,7 @@ fail() {
 
 test -x "$CLI" || fail "missing CLI at $CLI"
 test -x "$APP/Contents/MacOS/Endelito" || fail "missing app executable"
+test -f "$RESOURCES/EndelitoBridge.js" || fail "missing WebKit bridge script"
 test -f "$RESOURCES/AppIcon.icns" || fail "missing app icon"
 test -f "$RESOURCES/MenuBarIconTemplate.png" || fail "missing menu bar icon"
 

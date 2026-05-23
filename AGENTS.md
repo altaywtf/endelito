@@ -15,6 +15,7 @@ This repo is small. Keep the top level navigational and put implementation detai
 - Do not add Accessibility, global input monitoring, or system-wide event posting without an explicit design decision and user approval.
 - Keep the player on `WKWebsiteDataStore.default()` so website login/session data persists across app restarts.
 - Generated build outputs stay out of git: `bin/`, `build/`, and generated app resources.
+- The WebKit compatibility bridge lives in [EndelitoBridge.js](app/Resources/EndelitoBridge.js); keep substantial page JavaScript out of Swift string literals.
 - App icons are generated from [GenerateAssets.swift](tools/GenerateAssets.swift); update the generator rather than editing generated PNG or ICNS files.
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
 - This is a release repo, not a deploy repo: GitHub Actions verifies every push/PR and semantic-release publishes GitHub Releases from Conventional Commits on `main`.

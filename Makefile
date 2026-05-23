@@ -19,6 +19,7 @@ build-cli:
 build-app:
 	mkdir -p "$(MACOS_DIR)" "$(RESOURCES_DIR)"
 	cp app/Info.plist "$(CONTENTS_DIR)/Info.plist"
+	cp app/Resources/EndelitoBridge.js "$(RESOURCES_DIR)/EndelitoBridge.js"
 	swift tools/GenerateAssets.swift "$(RESOURCES_DIR)"
 	iconutil -c icns "$(RESOURCES_DIR)/AppIcon.iconset" -o "$(RESOURCES_DIR)/AppIcon.icns"
 	xcrun swiftc -Osize -framework AppKit -framework WebKit -o "$(MACOS_DIR)/$(EXECUTABLE)" app/Sources/Endelito/main.swift
