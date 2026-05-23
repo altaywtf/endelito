@@ -15,7 +15,8 @@ The Swift app owns the WebKit session and player window. It is an accessory app 
 2. The CLI opens `endelito://play`.
 3. The app receives the URL through `NSAppleEventManager`.
 4. The app updates local playback state and sends the command into the WebView.
-5. `bin/endelito status` reads `~/Library/Application Support/Endelito/state.json`.
+5. `bin/endelito source <id-or-name>` loads `https://play.endel.io/en/soundscape/<id>`.
+6. `bin/endelito status` reads `~/Library/Application Support/Endelito/state.json`.
 
 ## Readiness
 
@@ -31,9 +32,9 @@ The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps logi
 
 Do not switch to `.nonPersistent()` or a custom throwaway data store for the player. Session persistence is part of the app contract.
 
-The current default page is the Focus soundscape. Endel has more soundscapes and product features than the prototype exposes.
+The current default page is the Focus source. Source selection is ID based and matches Endel's visible source icons. The menu bar Source submenu and `source <id-or-name>` load a known soundscape route, and `play <id-or-name>` loads then starts that route. The supported IDs are the classic Focus, Relax, and Sleep sources exposed by the web player.
 
-The app injects the bundled [EndelitoBridge.js](../app/Resources/EndelitoBridge.js) compatibility shim for the website APIs used by the desktop wrapper, including playback state, menu commands, and deeplink callbacks. The shim also observes controllable media playback and WebAudio context state so the CLI state can follow page-driven or system-driven changes such as AirPlay pausing playback. Decorative muted looping videos are ignored.
+The app injects the bundled [EndelitoBridge.js](../app/Resources/EndelitoBridge.js) compatibility shim for the website APIs used by the desktop wrapper, including playback state, menu commands, source route changes, and deeplink callbacks. The shim also observes controllable media playback and WebAudio context state so the CLI state can follow page-driven or system-driven changes such as AirPlay pausing playback. Decorative muted looping videos are ignored.
 
 Playback targets the player button inside the WebView. The app intentionally avoids Accessibility permissions and system-wide input events.
 
@@ -58,13 +59,12 @@ Generated assets are build outputs and are not committed.
 
 ## Current Limits
 
-- Soundscape/channel selection is not modeled yet. The app opens Focus by default, and future work should expose available soundscapes through CLI commands and menu items instead of hardcoding a single page.
+- Source selection uses a checked-in ID list from the web player's current source icons. New or renamed sources need a small CLI/app update.
 - Playback from CLI depends on WebKit accepting the in-app control path. Manual WebView clicks are the baseline fallback.
 - Login, purchase, notifications, and OAuth/deep-link auth flows need real-use validation before treating the app as a daily-driver replacement.
 - Release packaging publishes GitHub Release assets; the app has no in-app update flow yet.
 
 ## Future Work
 
-- Add `list-soundscapes` and `play <soundscape>` commands once the stable website routes or in-page menu model are mapped.
-- Reflect the current soundscape in `status`.
+- Refresh the source list if Endel adds or renames web player source icons.
 - Keep advanced Endel features opt-in rather than expanding the menu bar app into a full desktop clone.

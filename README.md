@@ -8,7 +8,7 @@ The shape is intentionally boring: one WebKit session, one menu bar app, one CLI
 - WebKit uses the default website data store, so the site session persists on this Mac.
 - The Go CLI launches the app, sends `endelito://` commands, and reads a tiny local state file.
 - There are no charts, dashboards, visualizations, or background provider scans.
-- The prototype opens the Focus soundscape by default; broader soundscape selection is future work.
+- The app opens the Focus soundscape by default and can switch between Endel's source icons.
 
 ## Build
 
@@ -40,6 +40,10 @@ bin/endelito launch
 bin/endelito status
 bin/endelito show
 bin/endelito hide
+bin/endelito sources
+bin/endelito source focus
+bin/endelito source "nature elements"
+bin/endelito play dynamic-focus
 bin/endelito play
 bin/endelito pause
 bin/endelito toggle
@@ -48,7 +52,7 @@ bin/endelito debug
 bin/endelito quit
 ```
 
-Open the player once with `bin/endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback.
+Open the player once with `bin/endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback. The menu bar item includes a Source submenu with the known Focus, Relax, and Sleep sources. Use `bin/endelito sources` to list known source IDs. Use `bin/endelito source <id-or-name>` to load a source without starting playback, or `bin/endelito play <id-or-name>` to load and start it.
 
 Sign-in persists across app restarts through WebKit's default website data store for `Endelito.app`. Rebuilding the app with the same bundle identifier keeps using the same WebKit session storage.
 

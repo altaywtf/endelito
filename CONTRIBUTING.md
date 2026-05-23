@@ -23,9 +23,11 @@ Outputs:
 bin/endelito launch
 bin/endelito show
 bin/endelito status
+bin/endelito sources
+bin/endelito source focus
 ```
 
-Use `show` to open the WebView for sign-in or manual player selection. The app persists website session data through WebKit's default data store.
+Use `show` to open the WebView for sign-in or manual player selection. Use `sources` to list known source IDs, then use `source <id-or-name>` or `play <id-or-name>` to target one of Endel's source icons. The app persists website session data through WebKit's default data store.
 
 Do not replace the player data store with `.nonPersistent()` or a per-launch custom store. Login persistence is expected behavior.
 

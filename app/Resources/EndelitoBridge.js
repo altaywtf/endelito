@@ -15,6 +15,7 @@
   const observedMedia = new WeakSet();
   const observedAudioContexts = new Set();
   let lastPostedPlaybackState = "";
+  let lastPostedSource = "";
 
   const isControllableMedia = (element) => {
     if (element.tagName === "AUDIO") return true;
@@ -66,6 +67,121 @@
 
   const scheduleMediaObservation = () => setTimeout(observeMedia, 0);
 
+  const playbackButtonRect = (action) => {
+    const media = mediaElements()[0] || null;
+    const isPlaying = media ? media.paused === false && media.ended !== true : null;
+    if (action === "play" && isPlaying === true) return { ok: true, skipped: "already-playing" };
+    if (action === "pause" && isPlaying === false) return { ok: true, skipped: "already-paused" };
+
+    const button = document.querySelector('button[data-analytics="btn_player_playback_control"]');
+    if (!button) return { ok: false, reason: "no-playback-button" };
+
+    const rect = button.getBoundingClientRect();
+    return {
+      ok: true,
+      x: rect.x + rect.width / 2,
+      y: rect.y + rect.height / 2,
+      width: rect.width,
+      height: rect.height
+    };
+  };
+
+  const summarizeElement = (element, selector = null) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      ...(selector ? { selector } : {}),
+      tag: element.tagName,
+      text: (element.innerText || element.textContent || "").trim().slice(0, 80),
+      aria: element.getAttribute("aria-label"),
+      className: String(element.className || "").slice(0, 160),
+      title: element.getAttribute("title"),
+      testid: element.getAttribute("data-testid"),
+      role: element.getAttribute("role"),
+      rect: {
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      },
+      html: element.outerHTML.slice(0, 300),
+      paused: typeof element.paused === "boolean" ? element.paused : null,
+      muted: typeof element.muted === "boolean" ? element.muted : null
+    };
+  };
+
+  const debugPage = () => {
+    const selectors = [
+      "button",
+      '[role="button"]',
+      "[aria-label]",
+      "[data-testid]",
+      'a[href*="/soundscape/"]',
+      '[class*="soundscape" i]',
+      '[class*="source" i]',
+      "svg",
+      "canvas",
+      "audio",
+      "video"
+    ];
+    const items = selectors.flatMap((selector) =>
+      Array.from(document.querySelectorAll(selector)).slice(0, 120).map((element) => summarizeElement(element, selector))
+    );
+    const visible = Array.from(document.querySelectorAll("body *"))
+      .flatMap((element) => {
+        const rect = element.getBoundingClientRect();
+        if (rect.width < 24 || rect.height < 24 || rect.y > 260) return [];
+        const style = getComputedStyle(element);
+        if (style.visibility === "hidden" || style.display === "none" || Number(style.opacity) === 0) return [];
+        return [summarizeElement(element)];
+      })
+      .slice(0, 160);
+
+    return {
+      href: location.href,
+      title: document.title,
+      readyState: document.readyState,
+      hasElectron: Boolean(window.electron),
+      hasEndelito: Boolean(window.__endelito),
+      items,
+      visible
+    };
+  };
+
+  const currentSource = () => {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const index = parts.indexOf("soundscape");
+    if (index === -1 || index + 1 >= parts.length) return null;
+    return parts[index + 1];
+  };
+
+  const postSource = () => {
+    const source = currentSource();
+    if (!source || source === lastPostedSource) return;
+    lastPostedSource = source;
+    post({
+      type: "source",
+      source,
+      wasPlaying: currentPlaybackState()?.isPlaying === true
+    });
+  };
+
+  const installLocationObserver = () => {
+    const notify = () => setTimeout(postSource, 0);
+    for (const name of ["pushState", "replaceState"]) {
+      const original = history[name];
+      if (typeof original !== "function") continue;
+
+      history[name] = function (...args) {
+        const result = original.apply(this, args);
+        notify();
+        return result;
+      };
+    }
+
+    window.addEventListener("popstate", notify, { passive: true });
+    window.addEventListener("hashchange", notify, { passive: true });
+  };
+
   const observeAudioContext = (context) => {
     if (!context || observedAudioContexts.has(context)) return context;
     observedAudioContexts.add(context);
@@ -94,6 +210,7 @@
 
   installAudioContextObserver("AudioContext");
   installAudioContextObserver("webkitAudioContext");
+  installLocationObserver();
 
   new MutationObserver(scheduleMediaObservation).observe(document.documentElement || document, {
     childList: true,
@@ -103,7 +220,9 @@
   window.addEventListener("load", observeMedia, { once: true });
   setInterval(observeMedia, 1000);
   setInterval(postPlaybackState, 1000);
+  setInterval(postSource, 1000);
   scheduleMediaObservation();
+  postSource();
 
   window.__endelito = {
     playbackCommand: (action) => {
@@ -124,6 +243,8 @@
         }
       });
     },
+    nativePlaybackClick: playbackButtonRect,
+    debugPage,
     menuCommand: (action) => {
       for (const cb of menuCallbacks) cb(action);
     },

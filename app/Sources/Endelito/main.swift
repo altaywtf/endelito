@@ -1,7 +1,43 @@
 import AppKit
 import WebKit
 
-private let appURL = URL(string: "https://play.endel.io/en/soundscape/focus")!
+private struct SourceDefinition {
+    let id: String
+    let name: String
+    let modality: String
+}
+
+private let defaultSourceSlug = "focus"
+private let sourceDefinitions = [
+    SourceDefinition(id: "focus", name: "Focus", modality: "Focus"),
+    SourceDefinition(id: "colored-noise", name: "Colored Noise", modality: "Focus"),
+    SourceDefinition(id: "dynamic-focus", name: "Dynamic Focus", modality: "Focus"),
+    SourceDefinition(id: "study", name: "Study", modality: "Focus"),
+    SourceDefinition(id: "plastikman", name: "Deeper Focus", modality: "Focus"),
+    SourceDefinition(id: "solfeggio-tones", name: "Solfeggio Tones", modality: "Focus"),
+    SourceDefinition(id: "relax", name: "Relax", modality: "Relax"),
+    SourceDefinition(id: "8d-odyssey", name: "8D Odyssey", modality: "Relax"),
+    SourceDefinition(id: "nature-elements", name: "Nature Elements", modality: "Relax"),
+    SourceDefinition(id: "spatial", name: "Spatial Orbit", modality: "Relax"),
+    SourceDefinition(id: "recovery", name: "Recovery", modality: "Relax"),
+    SourceDefinition(id: "wisdom", name: "Wisdom", modality: "Relax"),
+    SourceDefinition(id: "sleep", name: "Sleep", modality: "Sleep"),
+    SourceDefinition(id: "rainy", name: "Rainy Outside", modality: "Sleep"),
+    SourceDefinition(id: "winddown", name: "Wind Down", modality: "Sleep"),
+    SourceDefinition(id: "hibernation", name: "Hibernation", modality: "Sleep"),
+    SourceDefinition(id: "grimes", name: "Grimes", modality: "Sleep")
+]
+private let sourceNames = Dictionary(uniqueKeysWithValues: sourceDefinitions.map { ($0.id, $0.name) })
+private let sourceAliases = [
+    "8d": "8d-odyssey",
+    "alan-watts": "wisdom",
+    "color-noise": "colored-noise",
+    "deeper": "plastikman",
+    "rainy-outside": "rainy",
+    "spatial-orbit": "spatial",
+    "wind-down": "winddown",
+    "wind-down-by-james-blake": "winddown"
+]
 private let stateURL = FileManager.default
     .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     .appendingPathComponent("Endelito", isDirectory: true)
@@ -14,6 +50,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var statusItem: NSStatusItem?
     private var dynamicMenu: [[String: Any]] = []
     private var playbackState = PlaybackState(isPlaying: false)
+    private var sourceSlug = defaultSourceSlug
+    private var playAfterNavigation = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -65,10 +103,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             playerView?.reload()
         case "debug":
             debugPage()
-        case "play", "pause":
+        case "play":
+            if let source = queryValue("source", in: components) {
+                loadSource(source, playAfterLoad: true)
+            } else {
+                sendPlaybackCommand(command)
+            }
+        case "pause":
             sendPlaybackCommand(command)
         case "toggle":
             sendPlaybackCommand(playbackState.isPlaying ? "pause" : "play")
+        case "source", "soundscape":
+            if let source = queryValue("slug", in: components) ?? queryValue("source", in: components) {
+                loadSource(source, playAfterLoad: playbackState.isPlaying)
+            }
         case "deeplink":
             if let url = components.queryItems?.first(where: { $0.name == "url" })?.value {
                 sendDeepLink(url)
@@ -126,7 +174,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             NSApp.activate(ignoringOtherApps: true)
         }
 
-        webView.load(URLRequest(url: appURL))
+        webView.load(URLRequest(url: sourceURL(sourceSlug)))
 
         self.playerView = webView
         self.window = window
@@ -164,6 +212,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private func rebuildStatusMenu() {
         let menu = NSMenu()
         menu.addItem(withTitle: playbackState.isPlaying ? "Pause" : "Play", action: #selector(togglePlayback(_:)), keyEquivalent: "")
+        menu.addItem(sourceMenuItem())
 
         if !dynamicMenu.isEmpty {
             menu.addItem(NSMenuItem.separator())
@@ -214,6 +263,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         sendMenuCommand(action)
     }
 
+    @objc private func selectSource(_ sender: NSMenuItem) {
+        guard let source = sender.representedObject as? String else {
+            return
+        }
+
+        loadSource(source, playAfterLoad: playbackState.isPlaying)
+    }
+
+    private func sourceMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Source: \(sourceName(sourceSlug))", action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: "Source")
+        var currentModality = ""
+
+        for source in sourceDefinitions {
+            if source.modality != currentModality {
+                if !currentModality.isEmpty {
+                    submenu.addItem(NSMenuItem.separator())
+                }
+
+                currentModality = source.modality
+                let groupItem = NSMenuItem(title: currentModality, action: nil, keyEquivalent: "")
+                groupItem.isEnabled = false
+                submenu.addItem(groupItem)
+            }
+
+            let sourceItem = NSMenuItem(title: source.name, action: #selector(selectSource(_:)), keyEquivalent: "")
+            sourceItem.representedObject = source.id
+            sourceItem.state = source.id == sourceSlug ? .on : .off
+            submenu.addItem(sourceItem)
+        }
+
+        item.submenu = submenu
+        return item
+    }
+
     private func sendPlaybackCommand(_ action: String) {
         ensurePlayerLoaded(showWindow: false)
         switch action {
@@ -230,102 +314,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         writeState()
 
         if action == "play" || action == "pause" || action == "toggle" {
-            clickPlaybackButton()
+            clickPlaybackButton(action)
+            return
+        }
+    }
+
+    private func loadSource(_ rawSource: String, playAfterLoad: Bool) {
+        guard let source = normalizedSourceSlug(rawSource) else {
+            writeDebug(["sourceError": "invalid-source", "source": rawSource])
             return
         }
 
-        let script = """
-        (() => {
-          window.__endelito?.playbackCommand?.(\(jsonString(action)));
-
-          const media = Array.from(document.querySelectorAll('audio, video')).find((element) => {
-            if (element.tagName === 'AUDIO') return true;
-            return !(element.muted === true && element.loop === true && element.autoplay === true);
-          });
-          const playbackButton = document.querySelector('button[data-analytics="btn_player_playback_control"]');
-          const action = \(jsonString(action));
-
-          if ((action === 'play' || action === 'pause' || action === 'toggle') && playbackButton) {
-            playbackButton.click();
-          }
-
-          if (!media && !playbackButton) return { ok: false, reason: 'no-media' };
-
-          if (action === 'play') {
-            media?.play?.().catch?.(() => {});
-          } else if (action === 'pause') {
-            media?.pause?.();
-          }
-
-          return {
-            ok: true,
-            isPlaying: action === 'play' ? true : action === 'pause' ? false : typeof media?.paused === 'boolean' ? !media.paused : false
-          };
-        })()
-        """
-
-        self.playerView?.evaluateJavaScript(script, completionHandler: { result, error in
-            if let error {
-                NSLog("Endelito playback command failed: \(error)")
-                self.writeDebug(["playbackError": String(describing: error)])
-                return
-            }
-
-            self.writeDebug(["playbackResult": result ?? "nil"])
-
-            guard let state = result as? [String: Any]
-            else {
-                return
-            }
-
-            if state["ok"] as? Bool != true {
-                if action == "play", state["reason"] as? String == "no-media" {
-                    self.playerView?.load(URLRequest(url: appURL))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        self.sendPlaybackCommand("play")
-                    }
-                }
-
-                return
-            }
-
-            self.playbackState = PlaybackState(
-                isPlaying: state["isPlaying"] as? Bool ?? self.playbackState.isPlaying
-            )
-            self.rebuildStatusMenu()
-            self.writeState()
-        })
+        ensurePlayerLoaded(showWindow: false)
+        sourceSlug = source
+        playAfterNavigation = playAfterLoad
+        playbackState = PlaybackState(isPlaying: playAfterLoad)
+        rebuildStatusMenu()
+        writeState()
+        playerView?.load(URLRequest(url: sourceURL(source)))
     }
 
-    private func clickPlaybackButton() {
-        let script = """
-        (() => {
-          const button = document.querySelector('button[data-analytics="btn_player_playback_control"]');
-          if (!button) return { ok: false, reason: 'no-playback-button' };
-          const rect = button.getBoundingClientRect();
-          return {
-            ok: true,
-            x: rect.x + rect.width / 2,
-            y: rect.y + rect.height / 2,
-            width: rect.width,
-            height: rect.height
-          };
-        })()
-        """
-
-        self.playerView?.evaluateJavaScript(script, completionHandler: { result, error in
+    private func clickPlaybackButton(_ action: String) {
+        playerView?.evaluateJavaScript("__endelito.nativePlaybackClick(\(jsonString(action)))") { result, error in
             if let error {
                 self.writeDebug(["nativeClickError": String(describing: error)])
                 return
             }
 
             guard let rect = result as? [String: Any],
-                  rect["ok"] as? Bool == true,
-                  let x = rect["x"] as? Double,
+                  rect["ok"] as? Bool == true
+            else {
+                self.writeDebug(["nativeClickResult": result ?? "nil"])
+                if action == "play",
+                   let result = result as? [String: Any],
+                   result["reason"] as? String == "no-playback-button" {
+                    self.playerView?.load(URLRequest(url: self.sourceURL(self.sourceSlug)))
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        self.sendPlaybackCommand("play")
+                    }
+                }
+                return
+            }
+
+            if rect["skipped"] != nil {
+                self.writeDebug(["webViewClick": rect])
+                return
+            }
+
+            guard let x = rect["x"] as? Double,
                   let y = rect["y"] as? Double,
                   let webView = self.playerView
             else {
-                self.writeDebug(["nativeClickResult": result ?? "nil"])
+                self.writeDebug(["nativeClickResult": result])
                 return
             }
 
@@ -359,7 +399,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             webView.mouseDown(with: down)
             webView.mouseUp(with: up)
             self.writeDebug(["webViewClick": ["x": x, "y": y]])
-        })
+        }
     }
 
     private func sendMenuCommand(_ action: String) {
@@ -372,6 +412,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         evaluate("window.__endelito && window.__endelito.deepLink(\(jsonString(url)))")
     }
 
+    private func queryValue(_ name: String, in components: URLComponents) -> String? {
+        components.queryItems?.first(where: { $0.name == name })?.value
+    }
+
+    private func sourceURL(_ source: String) -> URL {
+        URL(string: "https://play.endel.io/en/soundscape/\(source)")!
+    }
+
+    private func normalizedSourceSlug(_ rawSource: String) -> String? {
+        let rawSource = rawSource.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let source = rawSource
+            .replacingOccurrences(of: "_", with: "-")
+            .split(whereSeparator: { $0.isWhitespace })
+            .joined(separator: "-")
+        guard !source.isEmpty else {
+            return nil
+        }
+
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789-")
+        guard source.unicodeScalars.allSatisfy({ allowed.contains($0) }) else {
+            return nil
+        }
+
+        let resolvedSource = sourceAliases[source] ?? source
+        guard sourceNames[resolvedSource] != nil else {
+            return nil
+        }
+
+        return resolvedSource
+    }
+
+    private func sourceName(_ source: String) -> String {
+        sourceNames[source] ?? source
+    }
+
+    private func sourceSlug(from url: URL?) -> String? {
+        guard let url else {
+            return nil
+        }
+
+        let components = url.pathComponents
+        guard let index = components.firstIndex(of: "soundscape"),
+              components.indices.contains(index + 1)
+        else {
+            return nil
+        }
+
+        return normalizedSourceSlug(components[index + 1])
+    }
+
     private func evaluate(_ source: String) {
         playerView?.evaluateJavaScript(source) { _, error in
             if let error {
@@ -382,47 +472,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     private func debugPage() {
         ensurePlayerLoaded(showWindow: false)
-        let script = """
-        (() => {
-          const selectors = [
-            'button',
-            '[role="button"]',
-            '[aria-label]',
-            '[data-testid]',
-            'audio',
-            'video'
-          ];
-          const items = selectors.flatMap((selector) =>
-            Array.from(document.querySelectorAll(selector)).slice(0, 80).map((element) => ({
-              selector,
-              tag: element.tagName,
-              text: (element.innerText || element.textContent || '').trim().slice(0, 80),
-              aria: element.getAttribute('aria-label'),
-              className: String(element.className || '').slice(0, 160),
-              title: element.getAttribute('title'),
-              testid: element.getAttribute('data-testid'),
-              role: element.getAttribute('role'),
-              rect: (() => {
-                const rect = element.getBoundingClientRect();
-                return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) };
-              })(),
-              html: element.outerHTML.slice(0, 300),
-              paused: typeof element.paused === 'boolean' ? element.paused : null,
-              muted: typeof element.muted === 'boolean' ? element.muted : null
-            }))
-          );
-          return {
-            href: location.href,
-            title: document.title,
-            readyState: document.readyState,
-            hasElectron: Boolean(window.electron),
-            hasEndelito: Boolean(window.__endelito),
-            items
-          };
-        })()
-        """
-
-        playerView?.evaluateJavaScript(script) { result, error in
+        playerView?.evaluateJavaScript("__endelito.debugPage()") { result, error in
             if let error {
                 self.writeDebug(["error": String(describing: error)])
                 return
@@ -448,7 +498,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     private func jsonString(_ value: String) -> String {
-        guard let data = try? JSONSerialization.data(withJSONObject: value),
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed]),
               let string = String(data: data, encoding: .utf8)
         else {
             return "\"\""
@@ -480,6 +530,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                 rebuildStatusMenu()
                 writeState()
             }
+        case "source":
+            if let source = body["source"] as? String,
+               let normalizedSource = normalizedSourceSlug(source),
+               normalizedSource != sourceSlug {
+                let shouldResume = playbackState.isPlaying || body["wasPlaying"] as? Bool == true
+                sourceSlug = normalizedSource
+                rebuildStatusMenu()
+                writeState()
+                if shouldResume {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.sendPlaybackCommand("play")
+                    }
+                }
+            }
         default:
             break
         }
@@ -491,7 +555,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
         let payload: [String: Any] = [
             "app": "Endelito",
-            "url": appURL.absoluteString,
+            "url": sourceURL(sourceSlug).absoluteString,
+            "source": sourceSlug,
+            "sourceName": sourceName(sourceSlug),
             "isPlaying": playbackState.isPlaying,
             "dynamicMenuCount": dynamicMenu.count,
             "updatedAt": ISO8601DateFormatter().string(from: Date())
@@ -502,6 +568,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }
 
         try? data.write(to: stateURL, options: [.atomic])
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        didFinish navigation: WKNavigation!
+    ) {
+        if let source = sourceSlug(from: webView.url) {
+            sourceSlug = source
+        }
+
+        rebuildStatusMenu()
+        writeState()
+
+        if playAfterNavigation {
+            playAfterNavigation = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.sendPlaybackCommand("play")
+            }
+        }
     }
 
     func webView(

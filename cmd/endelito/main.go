@@ -18,9 +18,48 @@ const (
 	appName     = "Endelito"
 )
 
+type source struct {
+	ID       string
+	Name     string
+	Modality string
+}
+
+var sources = []source{
+	{ID: "focus", Name: "Focus", Modality: "focus"},
+	{ID: "colored-noise", Name: "Colored Noise", Modality: "focus"},
+	{ID: "dynamic-focus", Name: "Dynamic Focus", Modality: "focus"},
+	{ID: "study", Name: "Study", Modality: "focus"},
+	{ID: "plastikman", Name: "Deeper Focus", Modality: "focus"},
+	{ID: "solfeggio-tones", Name: "Solfeggio Tones", Modality: "focus"},
+	{ID: "relax", Name: "Relax", Modality: "relax"},
+	{ID: "8d-odyssey", Name: "8D Odyssey", Modality: "relax"},
+	{ID: "nature-elements", Name: "Nature Elements", Modality: "relax"},
+	{ID: "spatial", Name: "Spatial Orbit", Modality: "relax"},
+	{ID: "recovery", Name: "Recovery", Modality: "relax"},
+	{ID: "wisdom", Name: "Wisdom", Modality: "relax"},
+	{ID: "sleep", Name: "Sleep", Modality: "sleep"},
+	{ID: "rainy", Name: "Rainy Outside", Modality: "sleep"},
+	{ID: "winddown", Name: "Wind Down", Modality: "sleep"},
+	{ID: "hibernation", Name: "Hibernation", Modality: "sleep"},
+	{ID: "grimes", Name: "Grimes", Modality: "sleep"},
+}
+
+var sourceAliases = map[string]string{
+	"8d":                       "8d-odyssey",
+	"alan-watts":               "wisdom",
+	"color-noise":              "colored-noise",
+	"deeper":                   "plastikman",
+	"rainy-outside":            "rainy",
+	"spatial-orbit":            "spatial",
+	"wind-down":                "winddown",
+	"wind-down-by-james-blake": "winddown",
+}
+
 type liteState struct {
 	App              string `json:"app"`
 	URL              string `json:"url"`
+	Source           string `json:"source"`
+	SourceName       string `json:"sourceName"`
 	IsPlaying        bool   `json:"isPlaying"`
 	DynamicMenuCount int    `json:"dynamicMenuCount"`
 	UpdatedAt        string `json:"updatedAt"`
@@ -45,7 +84,29 @@ func run(args []string) error {
 		return nil
 	case "status":
 		return printStatus()
-	case "launch", "show", "hide", "reload", "quit", "play", "pause", "toggle", "debug":
+	case "sources", "list-sources", "soundscapes":
+		printSources()
+		return nil
+	case "play":
+		if len(args) > 1 {
+			source, err := normalizeSource(args[1])
+			if err != nil {
+				return err
+			}
+			return sendCommand("play?source=" + url.QueryEscape(source))
+		}
+
+		return sendCommand(command)
+	case "source", "soundscape":
+		if len(args) < 2 {
+			return errors.New("expected: endelito source <id-or-name>")
+		}
+		source, err := normalizeSource(args[1])
+		if err != nil {
+			return err
+		}
+		return sendCommand("source?slug=" + url.QueryEscape(source))
+	case "launch", "show", "hide", "reload", "quit", "pause", "toggle", "debug":
 		return sendCommand(command)
 	case "deeplink":
 		if len(args) < 2 {
@@ -64,9 +125,83 @@ func usage() string {
 		"Commands:",
 		"  status",
 		"  launch | show | hide | reload | quit",
-		"  play | pause | toggle",
+		"  play [source] | pause | toggle",
+		"  source <id-or-name>",
+		"  sources",
 		"  deeplink <url>",
 	}, "\n")
+}
+
+func normalizeSource(raw string) (string, error) {
+	source := strings.TrimSpace(raw)
+	if source == "" {
+		return "", errors.New("source cannot be empty")
+	}
+
+	if parsed, err := url.Parse(source); err == nil && parsed.Scheme != "" {
+		source = soundscapeSlugFromPath(parsed.Path)
+		if source == "" {
+			return "", fmt.Errorf("URL does not include a soundscape slug: %s", raw)
+		}
+	}
+
+	source = sourceID(source)
+	for _, char := range source {
+		if (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '-' {
+			continue
+		}
+
+		return "", fmt.Errorf("invalid source slug %q: use lowercase letters, numbers, and hyphens", raw)
+	}
+
+	if alias, ok := sourceAliases[source]; ok {
+		source = alias
+	}
+	if !isKnownSource(source) {
+		return "", fmt.Errorf("unknown source %q; run: endelito sources", raw)
+	}
+
+	return source, nil
+}
+
+func sourceID(raw string) string {
+	source := strings.ToLower(strings.TrimSpace(raw))
+	source = strings.ReplaceAll(source, "_", "-")
+	source = strings.Join(strings.Fields(source), "-")
+	return source
+}
+
+func isKnownSource(id string) bool {
+	for _, source := range sources {
+		if source.ID == id {
+			return true
+		}
+	}
+
+	return false
+}
+
+func soundscapeSlugFromPath(path string) string {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	for index, part := range parts {
+		if part == "soundscape" && index+1 < len(parts) {
+			return parts[index+1]
+		}
+	}
+
+	return ""
+}
+
+func printSources() {
+	modality := ""
+	for _, source := range sources {
+		if source.Modality != modality {
+			modality = source.Modality
+			fmt.Printf("%s:\n", modality)
+		}
+
+		fmt.Printf("  %-16s %s\n", source.ID, source.Name)
+	}
 }
 
 func sendCommand(command string) error {
@@ -154,6 +289,13 @@ func printStatus() error {
 	}
 
 	fmt.Printf("%s: %s\n", state.App, playback)
+	if state.Source != "" {
+		if state.SourceName != "" {
+			fmt.Printf("source: %s (%s)\n", state.Source, state.SourceName)
+		} else {
+			fmt.Printf("source: %s\n", state.Source)
+		}
+	}
 	fmt.Printf("menu items: %d\n", state.DynamicMenuCount)
 	fmt.Printf("updated: %s\n", state.UpdatedAt)
 	return nil
