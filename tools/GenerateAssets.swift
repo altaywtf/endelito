@@ -81,57 +81,29 @@ func drawMark(in rect: CGRect, foreground: NSColor, background: NSColor?, lineSc
     let stroke = rect.width * lineScale
     strokePath(NSBezierPath(ovalIn: circle), color: foreground, width: stroke)
 
-    let leftLine = NSBezierPath()
-    leftLine.move(to: CGPoint(x: circle.minX + stroke * 0.45, y: circle.midY))
-    leftLine.line(to: CGPoint(x: circle.midX - rect.width * 0.17, y: circle.midY))
-    leftLine.curve(
-        to: CGPoint(x: circle.midX - rect.width * 0.05, y: circle.midY + rect.width * 0.18),
-        controlPoint1: CGPoint(x: circle.midX - rect.width * 0.07, y: circle.midY),
-        controlPoint2: CGPoint(x: circle.midX - rect.width * 0.04, y: circle.midY + rect.width * 0.06)
+    let wave = NSBezierPath()
+    wave.move(to: CGPoint(x: circle.minX + stroke * 0.55, y: circle.midY - rect.width * 0.04))
+    wave.curve(
+        to: CGPoint(x: circle.midX - rect.width * 0.19, y: circle.midY - rect.width * 0.07),
+        controlPoint1: CGPoint(x: circle.minX + rect.width * 0.08, y: circle.midY + rect.width * 0.01),
+        controlPoint2: CGPoint(x: circle.midX - rect.width * 0.25, y: circle.midY - rect.width * 0.15)
     )
-    strokePath(leftLine, color: foreground, width: stroke)
-
-    let rightLine = NSBezierPath()
-    rightLine.move(to: CGPoint(x: circle.midX + rect.width * 0.16, y: circle.midY))
-    rightLine.line(to: CGPoint(x: circle.maxX - stroke * 0.45, y: circle.midY))
-    strokePath(rightLine, color: foreground, width: stroke)
-
-    let bean = NSBezierPath()
-    bean.move(to: CGPoint(x: circle.midX, y: circle.maxY - rect.width * 0.12))
-    bean.curve(
-        to: CGPoint(x: circle.midX + rect.width * 0.05, y: circle.midY + rect.width * 0.08),
-        controlPoint1: CGPoint(x: circle.midX + rect.width * 0.13, y: circle.maxY - rect.width * 0.11),
-        controlPoint2: CGPoint(x: circle.midX + rect.width * 0.12, y: circle.midY + rect.width * 0.23)
+    wave.curve(
+        to: CGPoint(x: circle.midX, y: circle.midY + rect.width * 0.22),
+        controlPoint1: CGPoint(x: circle.midX - rect.width * 0.10, y: circle.midY - rect.width * 0.01),
+        controlPoint2: CGPoint(x: circle.midX - rect.width * 0.07, y: circle.midY + rect.width * 0.22)
     )
-    bean.curve(
-        to: CGPoint(x: circle.midX - rect.width * 0.02, y: circle.midY - rect.width * 0.12),
-        controlPoint1: CGPoint(x: circle.midX + rect.width * 0.00, y: circle.midY - rect.width * 0.02),
-        controlPoint2: CGPoint(x: circle.midX - rect.width * 0.06, y: circle.midY - rect.width * 0.03)
+    wave.curve(
+        to: CGPoint(x: circle.midX + rect.width * 0.19, y: circle.midY - rect.width * 0.07),
+        controlPoint1: CGPoint(x: circle.midX + rect.width * 0.07, y: circle.midY + rect.width * 0.22),
+        controlPoint2: CGPoint(x: circle.midX + rect.width * 0.10, y: circle.midY - rect.width * 0.01)
     )
-    bean.curve(
-        to: CGPoint(x: circle.midX + rect.width * 0.02, y: circle.minY + rect.width * 0.11),
-        controlPoint1: CGPoint(x: circle.midX + rect.width * 0.08, y: circle.midY - rect.width * 0.24),
-        controlPoint2: CGPoint(x: circle.midX + rect.width * 0.11, y: circle.minY + rect.width * 0.12)
+    wave.curve(
+        to: CGPoint(x: circle.maxX - stroke * 0.55, y: circle.midY - rect.width * 0.04),
+        controlPoint1: CGPoint(x: circle.midX + rect.width * 0.20, y: circle.midY - rect.width * 0.14),
+        controlPoint2: CGPoint(x: circle.maxX - rect.width * 0.08, y: circle.midY + rect.width * 0.02)
     )
-    bean.curve(
-        to: CGPoint(x: circle.midX - rect.width * 0.04, y: circle.midY - rect.width * 0.07),
-        controlPoint1: CGPoint(x: circle.midX - rect.width * 0.14, y: circle.minY + rect.width * 0.11),
-        controlPoint2: CGPoint(x: circle.midX - rect.width * 0.12, y: circle.midY - rect.width * 0.08)
-    )
-    bean.curve(
-        to: CGPoint(x: circle.midX, y: circle.maxY - rect.width * 0.12),
-        controlPoint1: CGPoint(x: circle.midX + rect.width * 0.01, y: circle.midY + rect.width * 0.07),
-        controlPoint2: CGPoint(x: circle.midX - rect.width * 0.15, y: circle.maxY - rect.width * 0.12)
-    )
-    strokePath(bean, color: foreground, width: stroke)
-
-    let dotRect = CGRect(
-        x: circle.midX + rect.width * 0.08,
-        y: circle.maxY - rect.width * 0.26,
-        width: stroke * 0.9,
-        height: stroke * 0.9
-    )
-    fillPath(NSBezierPath(ovalIn: dotRect), color: foreground)
+    strokePath(wave, color: foreground, width: stroke)
 }
 
 let iconSizes = [
@@ -164,6 +136,6 @@ for variant in iconSizes {
 let template = image(size: 44, scale: 2) { rect in
     NSColor.clear.setFill()
     rect.fill()
-    drawMark(in: rect, foreground: .black, background: nil, lineScale: 0.075)
+    drawMark(in: rect, foreground: .black, background: nil, lineScale: 0.055)
 }
 try savePNG(template, to: output.appendingPathComponent("MenuBarIconTemplate.png"))
