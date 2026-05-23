@@ -43,8 +43,6 @@ bin/endelito hide
 bin/endelito play
 bin/endelito pause
 bin/endelito toggle
-bin/endelito mute
-bin/endelito unmute
 bin/endelito reload
 bin/endelito debug
 bin/endelito quit

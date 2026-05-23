@@ -5,7 +5,7 @@ Endelito has two pieces:
 - A Go CLI at `cmd/endelito`.
 - A native Swift menu bar app at `app/Sources/Endelito`.
 
-The CLI is intentionally thin. It launches the app, sends `endelito://` commands through Launch Services, and reads local state.
+The CLI is intentionally thin. It opens the app bundle through Launch Services, sends `endelito://` commands through Launch Services, and reads local state.
 
 The Swift app owns the WebKit session and player window. It is an accessory app (`LSUIElement`) with no Dock icon.
 
@@ -33,7 +33,7 @@ Do not switch to `.nonPersistent()` or a custom throwaway data store for the pla
 
 The current default page is the Focus soundscape. Endel has more soundscapes and product features than the prototype exposes.
 
-The app injects a small compatibility shim for the website APIs used by the desktop wrapper, including playback state, menu commands, and deeplink callbacks.
+The app injects a small compatibility shim for the website APIs used by the desktop wrapper, including playback state, menu commands, and deeplink callbacks. The shim also observes controllable media playback and WebAudio context state so the CLI state can follow page-driven or system-driven changes such as AirPlay pausing playback. Decorative muted looping videos are ignored.
 
 Playback targets the player button inside the WebView. The app intentionally avoids Accessibility permissions and system-wide input events.
 
@@ -61,7 +61,7 @@ Generated assets are build outputs and are not committed.
 - Soundscape/channel selection is not modeled yet. The app opens Focus by default, and future work should expose available soundscapes through CLI commands and menu items instead of hardcoding a single page.
 - Playback from CLI depends on WebKit accepting the in-app control path. Manual WebView clicks are the baseline fallback.
 - Login, purchase, notifications, and OAuth/deep-link auth flows need real-use validation before treating the app as a daily-driver replacement.
-- The app has no release packaging or update flow yet.
+- Release packaging publishes GitHub Release assets; the app has no in-app update flow yet.
 
 ## Future Work
 

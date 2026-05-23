@@ -2,7 +2,7 @@
 
 ## Reporting
 
-Please report security issues privately to the repository owner instead of opening a public issue.
+Please report security issues privately to [altay@hey.com](mailto:altay@hey.com) instead of opening a public issue.
 
 ## Scope
 

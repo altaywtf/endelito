@@ -22,7 +22,6 @@ type liteState struct {
 	App              string `json:"app"`
 	URL              string `json:"url"`
 	IsPlaying        bool   `json:"isPlaying"`
-	Muted            bool   `json:"muted"`
 	DynamicMenuCount int    `json:"dynamicMenuCount"`
 	UpdatedAt        string `json:"updatedAt"`
 }
@@ -46,7 +45,7 @@ func run(args []string) error {
 		return nil
 	case "status":
 		return printStatus()
-	case "launch", "show", "hide", "reload", "quit", "play", "pause", "toggle", "mute", "unmute", "toggle-mute", "debug":
+	case "launch", "show", "hide", "reload", "quit", "play", "pause", "toggle", "debug":
 		return sendCommand(command)
 	case "deeplink":
 		if len(args) < 2 {
@@ -66,7 +65,6 @@ func usage() string {
 		"  status",
 		"  launch | show | hide | reload | quit",
 		"  play | pause | toggle",
-		"  mute | unmute | toggle-mute",
 		"  deeplink <url>",
 	}, "\n")
 }
@@ -87,23 +85,19 @@ func launchApp() error {
 
 	appPath := os.Getenv("ENDELITO_APP")
 	if appPath != "" {
-		return startAppBundle(appPath)
+		return openAppBundle(appPath)
 	}
 
 	appPath, err := localAppPath()
 	if err == nil && pathExists(appPath) {
-		return startAppBundle(appPath)
+		return openAppBundle(appPath)
 	}
 
 	if err := open("-b", appBundleID); err == nil {
-		return nil
+		return waitForAppRunning()
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return startAppBundle(appPath)
+	return err
 }
 
 func localAppPath() (string, error) {
@@ -120,12 +114,27 @@ func pathExists(path string) bool {
 	return err == nil
 }
 
-func startAppBundle(appPath string) error {
-	return exec.Command(filepath.Join(appPath, "Contents", "MacOS", appName)).Start()
+func openAppBundle(appPath string) error {
+	if err := open(appPath); err != nil {
+		return err
+	}
+
+	return waitForAppRunning()
 }
 
 func isAppRunning() bool {
 	return exec.Command("pgrep", "-x", appName).Run() == nil
+}
+
+func waitForAppRunning() error {
+	for range 20 {
+		if isAppRunning() {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	return fmt.Errorf("%s did not start", appName)
 }
 
 func printStatus() error {
@@ -144,13 +153,7 @@ func printStatus() error {
 		playback = "playing"
 	}
 
-	audio := "unmuted"
-	if state.Muted {
-		audio = "muted"
-	}
-
 	fmt.Printf("%s: %s\n", state.App, playback)
-	fmt.Printf("audio: %s\n", audio)
 	fmt.Printf("menu items: %d\n", state.DynamicMenuCount)
 	fmt.Printf("updated: %s\n", state.UpdatedAt)
 	return nil

@@ -55,6 +55,16 @@ Release assets are built by:
 scripts/package-release.sh
 ```
 
+## GitHub Settings
+
+This repo is a release repo, not a deploy repo. Keep GitHub configured so the release workflow can publish from `main`:
+
+- Allow squash merge only.
+- Delete branches after merge.
+- Protect `main` with required conversation resolution.
+- Do not add required status checks, pull-request reviews, or push restrictions unless the semantic-release bump commit path is updated at the same time.
+- Do not add deploy environments or deploy workflows for the app release path.
+
 ## Development Notes
 
 - `ENDELITO_APP=/path/to/Endelito.app bin/endelito launch` overrides the app path the CLI opens.

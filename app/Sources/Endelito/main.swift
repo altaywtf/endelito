@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var playerView: WKWebView?
     private var statusItem: NSStatusItem?
     private var dynamicMenu: [[String: Any]] = []
-    private var playbackState = PlaybackState(isPlaying: false, muted: false)
+    private var playbackState = PlaybackState(isPlaying: false)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -65,12 +65,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             playerView?.reload()
         case "debug":
             debugPage()
-        case "play", "pause", "mute", "unmute":
+        case "play", "pause":
             sendPlaybackCommand(command)
         case "toggle":
             sendPlaybackCommand(playbackState.isPlaying ? "pause" : "play")
-        case "toggle-mute":
-            sendPlaybackCommand(playbackState.muted ? "unmute" : "mute")
         case "deeplink":
             if let url = components.queryItems?.first(where: { $0.name == "url" })?.value {
                 sendDeepLink(url)
@@ -166,7 +164,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private func rebuildStatusMenu() {
         let menu = NSMenu()
         menu.addItem(withTitle: playbackState.isPlaying ? "Pause" : "Play", action: #selector(togglePlayback(_:)), keyEquivalent: "")
-        menu.addItem(withTitle: playbackState.muted ? "Unmute" : "Mute", action: #selector(toggleMute(_:)), keyEquivalent: "")
 
         if !dynamicMenu.isEmpty {
             menu.addItem(NSMenuItem.separator())
@@ -209,10 +206,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         sendPlaybackCommand(playbackState.isPlaying ? "pause" : "play")
     }
 
-    @objc private func toggleMute(_ sender: Any?) {
-        sendPlaybackCommand(playbackState.muted ? "unmute" : "mute")
-    }
-
     @objc private func runDynamicMenuItem(_ sender: NSMenuItem) {
         guard let action = sender.representedObject as? String else {
             return
@@ -225,15 +218,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         ensurePlayerLoaded(showWindow: false)
         switch action {
         case "play":
-            playbackState = PlaybackState(isPlaying: true, muted: playbackState.muted)
+            playbackState = PlaybackState(isPlaying: true)
         case "pause":
-            playbackState = PlaybackState(isPlaying: false, muted: playbackState.muted)
+            playbackState = PlaybackState(isPlaying: false)
         case "toggle":
-            playbackState = PlaybackState(isPlaying: !playbackState.isPlaying, muted: playbackState.muted)
-        case "mute":
-            playbackState = PlaybackState(isPlaying: playbackState.isPlaying, muted: true)
-        case "unmute":
-            playbackState = PlaybackState(isPlaying: playbackState.isPlaying, muted: false)
+            playbackState = PlaybackState(isPlaying: !playbackState.isPlaying)
         default:
             break
         }
@@ -249,7 +238,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         (() => {
           window.__endelito?.playbackCommand?.(\(jsonString(action)));
 
-          const media = document.querySelector('audio, video');
+          const media = Array.from(document.querySelectorAll('audio, video')).find((element) => {
+            if (element.tagName === 'AUDIO') return true;
+            return !(element.muted === true && element.loop === true && element.autoplay === true);
+          });
           const playbackButton = document.querySelector('button[data-analytics="btn_player_playback_control"]');
           const action = \(jsonString(action));
 
@@ -260,20 +252,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
           if (!media && !playbackButton) return { ok: false, reason: 'no-media' };
 
           if (action === 'play') {
-            if (media) media.muted = false;
             media?.play?.().catch?.(() => {});
           } else if (action === 'pause') {
             media?.pause?.();
-          } else if (action === 'mute') {
-            if (media) media.muted = true;
-          } else if (action === 'unmute') {
-            if (media) media.muted = false;
           }
 
           return {
             ok: true,
-            isPlaying: action === 'play' ? true : action === 'pause' ? false : typeof media?.paused === 'boolean' ? !media.paused : false,
-            muted: action === 'mute' ? true : action === 'unmute' ? false : Boolean(media?.muted)
+            isPlaying: action === 'play' ? true : action === 'pause' ? false : typeof media?.paused === 'boolean' ? !media.paused : false
           };
         })()
         """
@@ -304,8 +290,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             }
 
             self.playbackState = PlaybackState(
-                isPlaying: state["isPlaying"] as? Bool ?? self.playbackState.isPlaying,
-                muted: state["muted"] as? Bool ?? self.playbackState.muted
+                isPlaying: state["isPlaying"] as? Bool ?? self.playbackState.isPlaying
             )
             self.rebuildStatusMenu()
             self.writeState()
@@ -484,8 +469,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         case "playback":
             if let state = body["state"] as? [String: Any] {
                 playbackState = PlaybackState(
-                    isPlaying: state["isPlaying"] as? Bool ?? playbackState.isPlaying,
-                    muted: state["muted"] as? Bool ?? playbackState.muted
+                    isPlaying: state["isPlaying"] as? Bool ?? playbackState.isPlaying
                 )
                 rebuildStatusMenu()
                 writeState()
@@ -509,7 +493,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             "app": "Endelito",
             "url": appURL.absoluteString,
             "isPlaying": playbackState.isPlaying,
-            "muted": playbackState.muted,
             "dynamicMenuCount": dynamicMenu.count,
             "updatedAt": ISO8601DateFormatter().string(from: Date())
         ]
@@ -563,7 +546,6 @@ extension AppDelegate: NSWindowDelegate {
 
 private struct PlaybackState {
     var isPlaying: Bool
-    var muted: Bool
 }
 
 private let electronCompatibilityShim = """
@@ -581,29 +563,115 @@ private let electronCompatibilityShim = """
   const unsubscribeFrom = (callbacks, cb) => () => callbacks.delete(cb);
   const noop = async () => {};
   const state = { playback: null, menu: [] };
+  const observedMedia = new WeakSet();
+  const observedAudioContexts = new Set();
+  let lastPostedPlaybackState = "";
+
+  const isControllableMedia = (element) => {
+    if (element.tagName === 'AUDIO') return true;
+    return !(element.muted === true && element.loop === true && element.autoplay === true);
+  };
+  const mediaElements = () => Array.from(document.querySelectorAll('audio, video')).filter(isControllableMedia);
+
+  const currentPlaybackState = () => {
+    const elements = mediaElements();
+    const active = elements.find((element) => element.paused === false && element.ended !== true) || elements[0];
+    if (active) {
+      return {
+        isPlaying: active.paused === false && active.ended !== true
+      };
+    }
+
+    const audioContexts = Array.from(observedAudioContexts);
+    if (audioContexts.length === 0) return null;
+
+    return {
+      isPlaying: audioContexts.some((context) => context.state === "running")
+    };
+  };
+
+  const postPlaybackState = () => {
+    const nextState = currentPlaybackState();
+    if (!nextState) return;
+
+    const serialized = JSON.stringify(nextState);
+    if (serialized === lastPostedPlaybackState) return;
+
+    lastPostedPlaybackState = serialized;
+    state.playback = nextState;
+    post({ type: "playback", state: nextState });
+  };
+
+  const observeMedia = () => {
+    for (const media of mediaElements()) {
+      if (observedMedia.has(media)) continue;
+      observedMedia.add(media);
+
+      for (const eventName of ["play", "playing", "pause", "ended", "emptied", "abort"]) {
+        media.addEventListener(eventName, postPlaybackState, { passive: true });
+      }
+    }
+
+    postPlaybackState();
+  };
+
+  const scheduleMediaObservation = () => setTimeout(observeMedia, 0);
+
+  const observeAudioContext = (context) => {
+    if (!context || observedAudioContexts.has(context)) return context;
+    observedAudioContexts.add(context);
+    context.addEventListener?.("statechange", postPlaybackState, { passive: true });
+    postPlaybackState();
+    return context;
+  };
+
+  const installAudioContextObserver = (name) => {
+    const OriginalAudioContext = window[name];
+    if (typeof OriginalAudioContext !== "function") return;
+
+    function EndelitoAudioContext(...args) {
+      return observeAudioContext(new OriginalAudioContext(...args));
+    }
+
+    EndelitoAudioContext.prototype = OriginalAudioContext.prototype;
+    Object.setPrototypeOf(EndelitoAudioContext, OriginalAudioContext);
+
+    Object.defineProperty(window, name, {
+      configurable: true,
+      writable: true,
+      value: EndelitoAudioContext
+    });
+  };
+
+  installAudioContextObserver("AudioContext");
+  installAudioContextObserver("webkitAudioContext");
+
+  new MutationObserver(scheduleMediaObservation).observe(document.documentElement || document, {
+    childList: true,
+    subtree: true
+  });
+  document.addEventListener("DOMContentLoaded", observeMedia, { once: true });
+  window.addEventListener("load", observeMedia, { once: true });
+  setInterval(observeMedia, 1000);
+  setInterval(postPlaybackState, 1000);
+  scheduleMediaObservation();
 
   window.__endelito = {
     playbackCommand: (action) => {
       for (const cb of playbackCallbacks) cb(action);
-      const media = document.querySelector('audio, video');
+      const media = mediaElements()[0];
       if (!media) return;
 
       if (action === 'play') {
-        media.muted = false;
         media.play?.().catch?.(() => {});
       } else if (action === 'pause') {
         media.pause?.();
-      } else if (action === 'mute') {
-        media.muted = true;
-      } else if (action === 'unmute') {
-        media.muted = false;
       }
 
       post({
         type: "playback",
         state: {
-          isPlaying: typeof media.paused === 'boolean' ? !media.paused : false,
-          muted: Boolean(media.muted)
+          isPlaying: typeof media.paused === 'boolean' ? !media.paused : false
         }
       });
     },

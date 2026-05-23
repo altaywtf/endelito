@@ -6,7 +6,7 @@ This repo is small. Keep the top level navigational and put implementation detai
 
 - [README](README.md) explains the user-facing shape and fastest build path.
 - [Architecture](docs/ARCHITECTURE.md) explains the CLI, menu bar app, URL scheme, state file, and WebKit control model.
-- [Contributing](CONTRIBUTING.md) lists local validation commands.
+- [Contributing](CONTRIBUTING.md) lists local validation, release, and branch-policy expectations.
 - [Security](SECURITY.md) covers reporting and privacy expectations.
 
 ## Repo Rules
