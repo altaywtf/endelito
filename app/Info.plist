@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key>
+  <string>Endelito</string>
+  <key>CFBundleExecutable</key>
+  <string>Endelito</string>
+  <key>CFBundleIdentifier</key>
+  <string>local.endelito</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>CFBundleURLName</key>
+      <string>Endelito</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>endelito</string>
+      </array>
+    </dict>
+  </array>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>Endelito</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+</dict>
+</plist>
