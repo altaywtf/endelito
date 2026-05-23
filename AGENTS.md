@@ -18,9 +18,9 @@ This repo is small. Keep the top level navigational and put implementation detai
 - The WebKit compatibility bridge lives in [EndelitoBridge.js](app/Resources/EndelitoBridge.js); keep substantial page JavaScript out of Swift string literals.
 - App icons are generated from [GenerateAssets.swift](tools/GenerateAssets.swift); update the generator rather than editing generated PNG or ICNS files.
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
-- This is a release repo, not a deploy repo: GitHub Actions verifies every push/PR and semantic-release publishes GitHub Releases from Conventional Commits on `main`.
+- This is a release repo, not a deploy repo: GitHub Actions verifies normal pushes/PRs, and semantic-release publishes GitHub Releases from Conventional Commits on `main`.
 - Keep `main` protected with required conversation resolution; do not add deploy environments for this release-only path.
-- Do not add required status checks, pull-request reviews, or push restrictions unless the semantic-release bump commit path is updated at the same time.
+- Semantic-release writes `VERSION` back to `main` with a `chore(release): ... [skip ci]` commit; do not add required status checks, pull-request reviews, or push restrictions unless that bump path is redesigned first.
 - Dependabot tracks GitHub Actions and Go module updates through `.github/dependabot.yml`; keep action refs SHA-pinned with same-line version comments so update PRs can refresh them safely.
 - Keep GitHub collaboration files boring: PRs use the repo template, security reports stay private through `SECURITY.md`, and issue templates should not duplicate policy docs.
 

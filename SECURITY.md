@@ -12,6 +12,10 @@ Endelito is a local macOS helper. The main sensitive surfaces are:
 - Local state under `~/Library/Application Support/Endelito/`.
 - The `endelito://` URL scheme used for local CLI commands.
 
+## Supported Versions
+
+Security fixes target the latest GitHub Release and current `main`.
+
 ## Expectations
 
 - Do not log tokens, cookies, account details, or full page dumps that include private user content.

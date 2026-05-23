@@ -77,3 +77,5 @@ make doctor
 ```
 
 GitHub Actions runs the same verify gate on `macos-latest`. Pushes to `main` then run semantic-release and publish a GitHub Release when Conventional Commits produce a new version.
+
+Release commits update `VERSION` with `[skip ci]` so publishing does not loop back into another CI and release run.

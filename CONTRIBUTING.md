@@ -54,7 +54,9 @@ make doctor
 
 ## Release
 
-Commits on `main` use Conventional Commits. The CI workflow runs `make verify` and then semantic-release creates GitHub Releases when commit history warrants a version. Release-only Node tooling is pinned in the workflow instead of committed as repo dependencies.
+Commits on `main` use Conventional Commits. The CI workflow runs `make verify` for normal pushes and pull requests, then semantic-release creates GitHub Releases when commit history warrants a version. Release-only Node tooling is pinned in the workflow instead of committed as repo dependencies.
+
+Semantic-release updates `VERSION` through `scripts/write-version.sh` and commits it back to `main` as `chore(release): <version> [skip ci]`. That bump commit intentionally skips CI to avoid a release loop.
 
 Dependabot checks GitHub Actions and Go modules weekly. Keep workflow actions pinned to full commit SHAs with same-line version comments.
 
@@ -72,7 +74,7 @@ This repo is a release repo, not a deploy repo. Keep GitHub configured so the re
 - Delete branches after merge.
 - Protect `main` with required conversation resolution.
 - Allow only GitHub-owned actions, verified actions, and the pinned `cycjimmy/semantic-release-action` workflow action.
-- Do not add required status checks, pull-request reviews, or push restrictions unless the semantic-release bump commit path is updated at the same time.
+- Do not add required status checks, pull-request reviews, or push restrictions unless the semantic-release bump commit path is redesigned first.
 - Do not add deploy environments or deploy workflows for the app release path.
 - Keep pull requests on the repo template and report vulnerabilities through `SECURITY.md` rather than public issues.
 
