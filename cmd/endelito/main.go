@@ -85,7 +85,7 @@ func launchApp() error {
 		return nil
 	}
 
-	appPath := os.Getenv("ENDELBAR_APP")
+	appPath := os.Getenv("ENDELITO_APP")
 	if appPath == "" {
 		executable, err := os.Executable()
 		if err != nil {
