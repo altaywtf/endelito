@@ -28,6 +28,12 @@ test "$(plutil -extract LSUIElement raw -o - "$PLIST")" = "true" || fail "app is
 if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
   rm -f "$STATE"
   pkill -x Endelito >/dev/null 2>&1 || true
+  for _ in $(seq 1 20); do
+    if ! pgrep -x Endelito >/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
   ENDELITO_APP="$APP" "$CLI" launch
 
   for _ in $(seq 1 20); do
@@ -41,6 +47,12 @@ if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
   "$CLI" status | grep -q '^Endelito:' || fail "status did not read app state"
   "$CLI" quit || true
   pkill -x Endelito >/dev/null 2>&1 || true
+  for _ in $(seq 1 20); do
+    if ! pgrep -x Endelito >/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
 fi
 
 printf 'smoke: ok\n'

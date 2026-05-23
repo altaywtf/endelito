@@ -81,25 +81,51 @@ func sendCommand(command string) error {
 }
 
 func launchApp() error {
+	if isAppRunning() {
+		return nil
+	}
+
 	appPath := os.Getenv("ENDELITO_APP")
 	if appPath != "" {
-		return open("-n", appPath)
+		return startAppBundle(appPath)
+	}
+
+	appPath, err := localAppPath()
+	if err == nil && pathExists(appPath) {
+		return startAppBundle(appPath)
 	}
 
 	if err := open("-b", appBundleID); err == nil {
 		return nil
 	}
 
-	if appPath == "" {
-		executable, err := os.Executable()
-		if err != nil {
-			return err
-		}
-
-		appPath = filepath.Join(filepath.Dir(filepath.Dir(executable)), "build", appName+".app")
+	if err != nil {
+		return err
 	}
 
-	return open("-n", appPath)
+	return startAppBundle(appPath)
+}
+
+func localAppPath() (string, error) {
+	executable, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(filepath.Dir(filepath.Dir(executable)), "build", appName+".app"), nil
+}
+
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func startAppBundle(appPath string) error {
+	return exec.Command(filepath.Join(appPath, "Contents", "MacOS", appName)).Start()
+}
+
+func isAppRunning() bool {
+	return exec.Command("pgrep", "-x", appName).Run() == nil
 }
 
 func printStatus() error {
