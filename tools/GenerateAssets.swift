@@ -70,13 +70,13 @@ func fillPath(_ path: NSBezierPath, color: NSColor) {
     path.fill()
 }
 
-func drawMark(in rect: CGRect, foreground: NSColor, background: NSColor?, lineScale: CGFloat) {
+func drawMark(in rect: CGRect, foreground: NSColor, background: NSColor?, lineScale: CGFloat, insetScale: CGFloat = 0.21) {
     if let background {
         let radius = rect.width * 0.22
         fillPath(NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius), color: background)
     }
 
-    let inset = rect.width * 0.21
+    let inset = rect.width * insetScale
     let circle = rect.insetBy(dx: inset, dy: inset)
     let stroke = rect.width * lineScale
     strokePath(NSBezierPath(ovalIn: circle), color: foreground, width: stroke)
@@ -136,6 +136,6 @@ for variant in iconSizes {
 let template = image(size: 44, scale: 2) { rect in
     NSColor.clear.setFill()
     rect.fill()
-    drawMark(in: rect, foreground: .black, background: nil, lineScale: 0.055)
+    drawMark(in: rect, foreground: .black, background: nil, lineScale: 0.06, insetScale: 0.12)
 }
 try savePNG(template, to: output.appendingPathComponent("MenuBarIconTemplate.png"))
