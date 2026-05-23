@@ -13,7 +13,7 @@ updates:
         patterns:
           - "*"
     commit-message:
-      prefix: "deps"
+      prefix: "chore"
       include: "scope"
     open-pull-requests-limit: 5
 
@@ -29,6 +29,6 @@ updates:
         patterns:
           - "*"
     commit-message:
-      prefix: "deps"
+      prefix: "chore"
       include: "scope"
     open-pull-requests-limit: 5
