@@ -68,6 +68,12 @@ See [Architecture](docs/ARCHITECTURE.md) for the current control model and limit
 make verify
 ```
 
-`make verify` runs Go tests, builds the CLI and app, and checks the app bundle, URL scheme, icons, and CLI help. On a local macOS GUI session, `make smoke-live` also launches the app and checks that it writes state.
+`make verify` syntax-checks the WebKit bridge, runs Go tests, builds the CLI and app, and checks the app bundle, URL scheme, icons, and CLI help. On a local macOS GUI session, `make smoke-live` also launches the app, drives CLI source/play/pause commands through the URL scheme, checks state updates, and quits the app.
+
+For a quick machine-readable environment and runtime snapshot:
+
+```sh
+make doctor
+```
 
 GitHub Actions runs the same verify gate on `macos-latest`. Pushes to `main` then run semantic-release and publish a GitHub Release when Conventional Commits produce a new version.

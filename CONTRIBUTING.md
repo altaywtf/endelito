@@ -4,6 +4,7 @@
 
 - macOS
 - Go 1.26 or newer
+- Node.js for bridge syntax checks
 - Xcode command line tools with `swift`, `xcrun`, `iconutil`, and `codesign`
 
 ## Build
@@ -45,6 +46,12 @@ For UI changes, also launch the app and check the real state path:
 make smoke-live
 ```
 
+For environment and runtime diagnostics:
+
+```sh
+make doctor
+```
+
 ## Release
 
 Commits on `main` use Conventional Commits. The CI workflow runs `make verify` and then semantic-release creates GitHub Releases when commit history warrants a version. Release-only Node tooling is pinned in the workflow instead of committed as repo dependencies.
@@ -64,8 +71,10 @@ This repo is a release repo, not a deploy repo. Keep GitHub configured so the re
 - Allow squash merge only.
 - Delete branches after merge.
 - Protect `main` with required conversation resolution.
+- Allow only GitHub-owned actions, verified actions, and the pinned `cycjimmy/semantic-release-action` workflow action.
 - Do not add required status checks, pull-request reviews, or push restrictions unless the semantic-release bump commit path is updated at the same time.
 - Do not add deploy environments or deploy workflows for the app release path.
+- Keep pull requests on the repo template and report vulnerabilities through `SECURITY.md` rather than public issues.
 
 ## Development Notes
 

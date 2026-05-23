@@ -13,6 +13,39 @@ fail() {
   exit 1
 }
 
+wait_for_process_exit() {
+  for _ in $(seq 1 20); do
+    if ! pgrep -x Endelito >/dev/null; then
+      return
+    fi
+    sleep 0.1
+  done
+
+  fail "app did not quit"
+}
+
+wait_for_state() {
+  local description="$1"
+  local expected_source="$2"
+  local expected_playing="$3"
+
+  for _ in $(seq 1 40); do
+    if [[ -f "$STATE" ]] && node - "$STATE" "$expected_source" "$expected_playing" <<'NODE'
+const fs = require("fs");
+const [statePath, expectedSource, expectedPlaying] = process.argv.slice(2);
+const state = JSON.parse(fs.readFileSync(statePath, "utf8"));
+if (expectedSource !== "*" && state.source !== expectedSource) process.exit(1);
+if (expectedPlaying !== "*" && String(state.isPlaying) !== expectedPlaying) process.exit(1);
+NODE
+    then
+      return
+    fi
+    sleep 0.25
+  done
+
+  fail "state did not reach: $description"
+}
+
 test -x "$CLI" || fail "missing CLI at $CLI"
 test -x "$APP/Contents/MacOS/Endelito" || fail "missing app executable"
 test -f "$RESOURCES/EndelitoBridge.js" || fail "missing WebKit bridge script"
@@ -29,31 +62,28 @@ test "$(plutil -extract LSUIElement raw -o - "$PLIST")" = "true" || fail "app is
 if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
   rm -f "$STATE"
   pkill -x Endelito >/dev/null 2>&1 || true
-  for _ in $(seq 1 20); do
-    if ! pgrep -x Endelito >/dev/null; then
-      break
-    fi
-    sleep 0.1
-  done
+  wait_for_process_exit
   ENDELITO_APP="$APP" "$CLI" launch
 
-  for _ in $(seq 1 20); do
-    if [[ -f "$STATE" ]]; then
-      break
-    fi
-    sleep 0.25
-  done
-
-  test -f "$STATE" || fail "app did not write state file"
+  wait_for_state "initial launch state" "focus" "false"
   "$CLI" status | grep -q '^Endelito:' || fail "status did not read app state"
+
+  ENDELITO_APP="$APP" "$CLI" source relax
+  wait_for_state "source command selects Relax while paused" "relax" "false"
+
+  ENDELITO_APP="$APP" "$CLI" play focus
+  wait_for_state "play command selects Focus" "focus" "*"
+
+  ENDELITO_APP="$APP" "$CLI" source sleep
+  wait_for_state "source command selects Sleep" "sleep" "*"
+
+  ENDELITO_APP="$APP" "$CLI" pause
+  wait_for_state "pause command stops playback" "sleep" "false"
+
+  "$CLI" status | grep -q '^source: sleep (Sleep)$' || fail "status did not report selected source"
   "$CLI" quit || true
   pkill -x Endelito >/dev/null 2>&1 || true
-  for _ in $(seq 1 20); do
-    if ! pgrep -x Endelito >/dev/null; then
-      break
-    fi
-    sleep 0.1
-  done
+  wait_for_process_exit
 fi
 
 printf 'smoke: ok\n'

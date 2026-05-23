@@ -19,7 +19,10 @@ This repo is small. Keep the top level navigational and put implementation detai
 - App icons are generated from [GenerateAssets.swift](tools/GenerateAssets.swift); update the generator rather than editing generated PNG or ICNS files.
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
 - This is a release repo, not a deploy repo: GitHub Actions verifies every push/PR and semantic-release publishes GitHub Releases from Conventional Commits on `main`.
+- Keep `main` protected with required conversation resolution; do not add deploy environments for this release-only path.
+- Do not add required status checks, pull-request reviews, or push restrictions unless the semantic-release bump commit path is updated at the same time.
 - Dependabot tracks GitHub Actions and Go module updates through `.github/dependabot.yml`; keep action refs SHA-pinned with same-line version comments so update PRs can refresh them safely.
+- Keep GitHub collaboration files boring: PRs use the repo template, security reports stay private through `SECURITY.md`, and issue templates should not duplicate policy docs.
 
 ## Verification
 
@@ -29,4 +32,6 @@ Use the repo guardrails before committing:
 make verify
 ```
 
-Use `make smoke-live` when a macOS GUI session is available and you need to prove the app launches and writes state.
+Use `make smoke-live` when a macOS GUI session is available and you need to prove the app launches and accepts CLI source/play/pause commands through the URL scheme.
+
+Use `make doctor` for a quick local environment, build-artifact, process, and state-file snapshot before deeper debugging.
