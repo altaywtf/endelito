@@ -6,6 +6,7 @@ private let stateURL = FileManager.default
     .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     .appendingPathComponent("Endelito", isDirectory: true)
     .appendingPathComponent("state.json", isDirectory: false)
+private let sessionStore = WKWebsiteDataStore.default()
 
 final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
     private var window: NSWindow?
@@ -90,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }
 
         let configuration = WKWebViewConfiguration()
-        configuration.websiteDataStore = .default()
+        configuration.websiteDataStore = sessionStore
         configuration.allowsAirPlayForMediaPlayback = true
         configuration.mediaTypesRequiringUserActionForPlayback = []
 

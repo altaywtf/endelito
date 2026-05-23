@@ -52,6 +52,8 @@ bin/endelito quit
 
 Open the player once with `bin/endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback.
 
+Sign-in persists across app restarts through WebKit's default website data store for `Endelito.app`. Rebuilding the app with the same bundle identifier keeps using the same WebKit session storage.
+
 ## How It Works
 
 The app registers the `endelito://` URL scheme. Commands like `bin/endelito play` send `endelito://play`; the Swift app receives the URL and forwards the action into the WebView.

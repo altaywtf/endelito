@@ -19,7 +19,9 @@ The Swift app owns the WebKit session and player window. It is an accessory app 
 
 ## WebView
 
-The player uses `WKWebView` with the default website data store. That keeps login/session state in WebKit-managed storage for this app.
+The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps login/session state in WebKit-managed storage for this app, keyed by the app identity. Rebuilding `Endelito.app` with the same bundle identifier keeps using the same WebKit session store.
+
+Do not switch to `.nonPersistent()` or a custom throwaway data store for the player. Session persistence is part of the app contract.
 
 The current default page is the Focus soundscape. Endel has more soundscapes and product features than the prototype exposes.
 

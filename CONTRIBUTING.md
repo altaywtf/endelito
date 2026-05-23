@@ -28,6 +28,8 @@ bin/endelito status
 
 Use `show` to open the WebView for sign-in or manual player selection. The app persists website session data through WebKit's default data store.
 
+Do not replace the player data store with `.nonPersistent()` or a per-launch custom store. Login persistence is expected behavior.
+
 ## Validate
 
 Run these before pushing:
