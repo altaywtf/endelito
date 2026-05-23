@@ -21,6 +21,8 @@ The Swift app owns the WebKit session and player window. It is an accessory app 
 
 The player uses `WKWebView` with the default website data store. That keeps login/session state in WebKit-managed storage for this app.
 
+The current default page is the Focus soundscape. Endel has more soundscapes and product features than the prototype exposes.
+
 The app injects a small compatibility shim for the website APIs used by the desktop wrapper, including playback state, menu commands, and deeplink callbacks.
 
 Playback targets the player button inside the WebView. The app intentionally avoids Accessibility permissions and system-wide input events.
@@ -46,6 +48,13 @@ Generated assets are build outputs and are not committed.
 
 ## Current Limits
 
+- Soundscape/channel selection is not modeled yet. The app opens Focus by default, and future work should expose available soundscapes through CLI commands and menu items instead of hardcoding a single page.
 - Playback from CLI depends on WebKit accepting the in-app control path. Manual WebView clicks are the baseline fallback.
 - Login, purchase, notifications, and OAuth/deep-link auth flows need real-use validation before treating the app as a daily-driver replacement.
 - The app has no release packaging or update flow yet.
+
+## Future Work
+
+- Add `list-soundscapes` and `play <soundscape>` commands once the stable website routes or in-page menu model are mapped.
+- Reflect the current soundscape in `status`.
+- Keep advanced Endel features opt-in rather than expanding the menu bar app into a full desktop clone.

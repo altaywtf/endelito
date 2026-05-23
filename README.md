@@ -8,6 +8,7 @@ The shape is intentionally boring: one WebKit session, one menu bar app, one CLI
 - WebKit uses the default website data store, so the site session persists on this Mac.
 - The Go CLI launches the app, sends `endelito://` commands, and reads a tiny local state file.
 - There are no charts, dashboards, visualizations, or background provider scans.
+- The prototype opens the Focus soundscape by default; broader soundscape selection is future work.
 
 ## Build
 
