@@ -72,15 +72,25 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
-      - name: Update Homebrew formula
+      - name: Set up Homebrew
         if: ${{ steps.release.outputs.new_release_published == 'true' }}
-        uses: dawidd6/action-homebrew-bump-formula@1446dca236b0440c6f02723a3f14f13be2c04ab0 # v7
+        uses: Homebrew/actions/setup-homebrew@6eaeff80e7e5c43087c0e5eb5aa82120399e9c91 # main
         with:
           token: ${{ secrets.TAP_GITHUB_TOKEN }}
-          tap: altaywtf/homebrew-tap
-          formula: endelito
-          tag: v${{ steps.release.outputs.new_release_version }}
-          no_fork: true
-          force: true
-          user_name: github-actions[bot]
-          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          brew-gh-api-token: ${{ secrets.TAP_GITHUB_TOKEN }}
+
+      - name: Update Homebrew cask
+        if: ${{ steps.release.outputs.new_release_published == 'true' }}
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+          VERSION: ${{ steps.release.outputs.new_release_version }}
+        run: |
+          set -euo pipefail
+          brew tap altaywtf/tap
+          tap_repo="$(brew --repo altaywtf/tap)"
+          git -C "$tap_repo" config user.name "github-actions[bot]"
+          git -C "$tap_repo" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$tap_repo" remote set-url origin "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/altaywtf/homebrew-tap.git"
+          brew bump-cask-pr --write-only --commit --no-audit --no-style --version "$VERSION" --url "https://github.com/altaywtf/endelito/releases/download/v${VERSION}/endelito-macos-arm64.zip" altaywtf/tap/endelito
+          git -C "$tap_repo" push origin HEAD:main

@@ -14,16 +14,16 @@ The target runs `make build`, copies `build/Endelito.app`, `bin/endelito`, `VERS
 
 The CLI binary embeds the release version from `VERSION`, so `bin/endelito --version` matches the semantic-release version when the archive is prepared.
 
-## Homebrew Formula
+## Homebrew Cask
 
 Released versions are installable through the tap:
 
 ```sh
 brew tap altaywtf/tap
-brew install endelito
+brew install --cask endelito
 ```
 
-The formula lives at `Formula/endelito.rb` in `altaywtf/homebrew-tap` and points at the GitHub Release zip. The release workflow bumps that formula after semantic-release publishes a new version.
+The cask lives at `Casks/endelito.rb` in `altaywtf/homebrew-tap` and points at the GitHub Release zip. It installs both `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask after semantic-release publishes a new version.
 
 ## Continuous Release
 
@@ -38,7 +38,7 @@ Semantic-release reads Conventional Commits on `main`. When a release is warrant
 2. Writes the version to `VERSION` and builds `dist/*.zip`.
 3. Commits `VERSION` back to `main` with `chore(release): <version> [skip ci]`.
 4. Creates a GitHub Release and uploads the zip asset from `dist/`.
-5. Bumps `altaywtf/homebrew-tap` through `dawidd6/action-homebrew-bump-formula`.
+5. Bumps `altaywtf/homebrew-tap` through Homebrew's `brew bump-cask-pr`.
 
 The `[skip ci]` release commit is intentional: both CI jobs skip it so publishing does not recursively trigger another verify and release run.
 
@@ -49,7 +49,7 @@ Keep GitHub configured for direct maintainer pushes plus automated release write
 - Default branch: `main`.
 - Merge policy: squash merge only; delete branches after merge.
 - Branch protection: required conversation resolution, no required status checks, no required pull request reviews, no push restrictions.
-- Actions policy: selected actions only; allow GitHub-owned actions, verified actions, `cycjimmy/semantic-release-action@*`, and `dawidd6/action-homebrew-bump-formula@*`.
+- Actions policy: selected actions only; allow GitHub-owned actions, verified actions, `cycjimmy/semantic-release-action@*`, and `Homebrew/actions/setup-homebrew@*`.
 - Secrets: `TAP_GITHUB_TOKEN` is a tap-scoped fine-grained token with `contents: write` on `altaywtf/homebrew-tap`.
 
 Do not add required status checks, pull-request reviews, push restrictions, or a PR-required ruleset unless the semantic-release writeback path is redesigned first.

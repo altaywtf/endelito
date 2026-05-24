@@ -56,7 +56,7 @@ make doctor
 
 Use Conventional Commits. Pushes to `main` publish through semantic-release when commit history warrants a version.
 
-The Homebrew formula lives in `altaywtf/homebrew-tap` and is bumped after GitHub Release publishing. See [Distribution](docs/DISTRIBUTION.md) for the release workflow, GitHub settings, and branch-policy expectations.
+The Homebrew cask lives in `altaywtf/homebrew-tap` and is bumped after GitHub Release publishing. See [Distribution](docs/DISTRIBUTION.md) for the release workflow, GitHub settings, and branch-policy expectations.
 
 ## Pull Requests
 

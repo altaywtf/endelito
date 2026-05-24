@@ -55,10 +55,10 @@ Released versions are available from the Homebrew tap:
 
 ```sh
 brew tap altaywtf/tap
-brew install endelito
+brew install --cask endelito
 ```
 
-The formula installs both `Endelito.app` and the `endelito` CLI from the GitHub Release archive.
+The cask installs both `Endelito.app` and the `endelito` CLI from the GitHub Release archive.
 
 ## How It Works
 
