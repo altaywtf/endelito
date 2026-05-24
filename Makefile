@@ -40,7 +40,7 @@ package-release:
 	cp "$(BIN_DIR)/endelito" "$(PACKAGE_DIR)/"
 	cp "$(VERSION_FILE)" "$(PACKAGE_DIR)/"
 	cp README.md LICENSE* "$(PACKAGE_DIR)/" 2>/dev/null || true
-	(cd "$(DIST_DIR)" && ditto -c -k --sequesterRsrc --keepParent "$(APP_NAME)" "endelito-macos-$(ARCH).zip")
+	(cd "$(DIST_DIR)" && ditto -c -k --sequesterRsrc --keepParent "$(APP_NAME)" "endelito-$(RELEASE_VERSION)-macos-$(ARCH).zip")
 
 check-js:
 	node --check app/Resources/EndelitoBridge.js

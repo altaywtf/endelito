@@ -92,5 +92,5 @@ jobs:
           git -C "$tap_repo" config user.name "github-actions[bot]"
           git -C "$tap_repo" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$tap_repo" remote set-url origin "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/altaywtf/homebrew-tap.git"
-          brew bump-cask-pr --write-only --commit --no-audit --no-style --version "$VERSION" --url "https://github.com/altaywtf/endelito/releases/download/v${VERSION}/endelito-macos-arm64.zip" altaywtf/tap/endelito
+          brew bump-cask-pr --write-only --commit --no-audit --no-style --version "$VERSION" --url "https://github.com/altaywtf/endelito/releases/download/v${VERSION}/endelito-${VERSION}-macos-arm64.zip" altaywtf/tap/endelito
           git -C "$tap_repo" push origin HEAD:main

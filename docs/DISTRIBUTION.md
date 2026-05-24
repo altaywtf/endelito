@@ -10,7 +10,7 @@ Release assets are built by:
 make package-release
 ```
 
-The target runs `make build`, copies `build/Endelito.app`, `bin/endelito`, `VERSION`, and README/license material into `dist/Endelito/`, then creates `dist/endelito-macos-<arch>.zip`.
+The target runs `make build`, copies `build/Endelito.app`, `bin/endelito`, `VERSION`, and README/license material into `dist/Endelito/`, then creates `dist/endelito-<version>-macos-<arch>.zip`.
 
 The CLI binary embeds the release version from `VERSION`, so `bin/endelito --version` matches the semantic-release version when the archive is prepared.
 
