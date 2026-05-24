@@ -80,7 +80,7 @@ For a quick machine-readable environment and runtime snapshot:
 make doctor
 ```
 
-GitHub Actions runs the same verify gate on `macos-latest`. Pushes to `main` then run semantic-release and publish a GitHub Release when Conventional Commits produce a new version.
+GitHub Actions runs the same verify gate on `macos-26`. Pushes to `main` then run semantic-release and publish a GitHub Release when Conventional Commits produce a new version.
 
 ## Docs
 

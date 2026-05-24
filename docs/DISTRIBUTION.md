@@ -32,6 +32,8 @@ The cask lives at `Casks/endelito.rb` in `altaywtf/homebrew-tap` and points at t
 - `verify` runs `make verify` on pushes and pull requests, except `[skip ci]` release commits.
 - `release` runs after `verify` on normal pushes to `main`.
 
+Both jobs run on GitHub's `macos-26` runner. Endelito release artifacts currently target macOS 26 on Apple Silicon.
+
 Semantic-release reads Conventional Commits on `main`. When a release is warranted, it:
 
 1. Computes the next version using the `conventionalcommits` preset.
