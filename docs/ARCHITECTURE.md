@@ -18,15 +18,6 @@ The Swift app owns the WebKit session and player window. It is an accessory app 
 5. `bin/endelito source <id-or-name>` loads `https://play.endel.io/en/soundscape/<id>`.
 6. `bin/endelito status` reads `~/Library/Application Support/Endelito/state.json`.
 
-## Readiness
-
-- Boot: `make run` builds the CLI and app, then launches the menu bar app.
-- Smoke: `make smoke` checks the built CLI, app bundle, URL scheme, menu-bar flag, and generated icons.
-- Live smoke: `make smoke-live` launches the app, drives source/play/pause commands through the CLI and URL scheme, checks state updates, and quits the app.
-- Doctor: `make doctor` reports required local tools, build artifacts, running process state, and state-file validity.
-- CI: `.github/workflows/ci.yml` runs `make verify` on `macos-latest` for normal pushes and pull requests.
-- Distribution: [Distribution](DISTRIBUTION.md) describes release packaging and GitHub policy.
-
 ## WebView
 
 The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps login/session state in WebKit-managed storage for this app, keyed by the app identity. Rebuilding `Endelito.app` with the same bundle identifier keeps using the same WebKit session store.

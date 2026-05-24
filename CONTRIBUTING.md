@@ -13,24 +13,7 @@
 make build
 ```
 
-Outputs:
-
-- `bin/endelito`
-- `build/Endelito.app`
-
-## Run
-
-```sh
-bin/endelito launch
-bin/endelito show
-bin/endelito status
-bin/endelito sources
-bin/endelito source focus
-```
-
-Use `show` to open the WebView for sign-in or manual player selection. Use `sources` to list known source IDs, then use `source <id-or-name>` or `play <id-or-name>` to target one of Endel's source icons. The app persists website session data through WebKit's default data store.
-
-Do not replace the player data store with `.nonPersistent()` or a per-launch custom store. Login persistence is expected behavior.
+See [README](README.md) for user-facing CLI commands and [Architecture](docs/ARCHITECTURE.md) for the app, state file, URL scheme, and WebKit session model.
 
 ## Validate
 
@@ -54,9 +37,7 @@ make doctor
 
 ## Release
 
-Use Conventional Commits. Pushes to `main` publish through semantic-release when commit history warrants a version.
-
-The Homebrew cask lives in `altaywtf/homebrew-tap` and is bumped after GitHub Release publishing. See [Distribution](docs/DISTRIBUTION.md) for the release workflow, GitHub settings, and branch-policy expectations.
+Use Conventional Commits. See [Distribution](docs/DISTRIBUTION.md) for release workflow, Homebrew cask, GitHub settings, and branch-policy expectations.
 
 ## Pull Requests
 

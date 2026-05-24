@@ -16,12 +16,7 @@ The CLI binary embeds the release version from `VERSION`, so `bin/endelito --ver
 
 ## Homebrew Cask
 
-Released versions are installable through the tap:
-
-```sh
-brew tap altaywtf/tap
-brew install --cask endelito
-```
+Released versions are installable through the tap; see [README](../README.md#install) for the user-facing command.
 
 The cask lives at `Casks/endelito.rb` in `altaywtf/homebrew-tap` and points at the GitHub Release zip through a `#{version}` URL template. It installs both `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask after semantic-release publishes a new version.
 
