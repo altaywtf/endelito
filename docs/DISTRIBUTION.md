@@ -38,7 +38,7 @@ Semantic-release reads Conventional Commits on `main`. When a release is warrant
 2. Writes the version to `VERSION` and builds `dist/*.zip`.
 3. Commits `VERSION` back to `main` with `chore(release): <version> [skip ci]`.
 4. Creates a GitHub Release and uploads the zip asset from `dist/`.
-5. Bumps the cask version and checksum in `altaywtf/homebrew-tap` through Homebrew's `brew bump-cask-pr`.
+5. Bumps the cask version and checksum in `altaywtf/homebrew-tap` through Homebrew's `brew bump-cask-pr`, including Homebrew's cask audit and style checks before pushing the tap commit.
 
 The `[skip ci]` release commit is intentional: both CI jobs skip it so publishing does not recursively trigger another verify and release run.
 
