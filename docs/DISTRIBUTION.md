@@ -7,10 +7,23 @@ Endelito is a versioned artifact repo. It publishes macOS app and CLI release as
 Release assets are built by:
 
 ```sh
-scripts/package-release.sh
+make package-release
 ```
 
-The script runs `make build`, copies `build/Endelito.app`, `bin/endelito`, and README/license material into `dist/Endelito/`, then creates `dist/endelito-macos-<arch>.zip`.
+The target runs `make build`, copies `build/Endelito.app`, `bin/endelito`, `VERSION`, and README/license material into `dist/Endelito/`, then creates `dist/endelito-macos-<arch>.zip`.
+
+The CLI binary embeds the release version from `VERSION`, so `bin/endelito --version` matches the semantic-release version when the archive is prepared.
+
+## Homebrew Formula
+
+Released versions are installable through the tap:
+
+```sh
+brew tap altaywtf/tap
+brew install endelito
+```
+
+The formula lives at `Formula/endelito.rb` in `altaywtf/homebrew-tap` and points at the GitHub Release zip. The release workflow bumps that formula after semantic-release publishes a new version.
 
 ## Continuous Release
 
@@ -22,9 +35,10 @@ The script runs `make build`, copies `build/Endelito.app`, `bin/endelito`, and R
 Semantic-release reads Conventional Commits on `main`. When a release is warranted, it:
 
 1. Computes the next version using the `conventionalcommits` preset.
-2. Writes the version to `VERSION` through `scripts/write-version.sh`.
+2. Writes the version to `VERSION` and builds `dist/*.zip`.
 3. Commits `VERSION` back to `main` with `chore(release): <version> [skip ci]`.
-4. Creates a GitHub Release and uploads `dist/*.zip`.
+4. Creates a GitHub Release and uploads the zip asset from `dist/`.
+5. Bumps `altaywtf/homebrew-tap` through `dawidd6/action-homebrew-bump-formula`.
 
 The `[skip ci]` release commit is intentional: both CI jobs skip it so publishing does not recursively trigger another verify and release run.
 
@@ -35,8 +49,8 @@ Keep GitHub configured for direct maintainer pushes plus automated release write
 - Default branch: `main`.
 - Merge policy: squash merge only; delete branches after merge.
 - Branch protection: required conversation resolution, no required status checks, no required pull request reviews, no push restrictions.
-- Actions policy: selected actions only; allow GitHub-owned actions, verified actions, and `cycjimmy/semantic-release-action@*`.
-- Environments: none for the current release path.
+- Actions policy: selected actions only; allow GitHub-owned actions, verified actions, `cycjimmy/semantic-release-action@*`, and `dawidd6/action-homebrew-bump-formula@*`.
+- Secrets: `TAP_GITHUB_TOKEN` is a tap-scoped fine-grained token with `contents: write` on `altaywtf/homebrew-tap`.
 
 Do not add required status checks, pull-request reviews, push restrictions, or a PR-required ruleset unless the semantic-release writeback path is redesigned first.
 

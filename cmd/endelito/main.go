@@ -18,6 +18,8 @@ const (
 	appName     = "Endelito"
 )
 
+var version = "dev"
+
 type source struct {
 	ID       string
 	Name     string
@@ -82,6 +84,9 @@ func run(args []string) error {
 	case "help", "--help", "-h":
 		fmt.Println(usage())
 		return nil
+	case "version", "--version", "-v":
+		fmt.Println(version)
+		return nil
 	case "status":
 		return printStatus()
 	case "sources", "list-sources", "soundscapes":
@@ -124,6 +129,7 @@ func usage() string {
 		"",
 		"Commands:",
 		"  status",
+		"  version",
 		"  launch | show | hide | reload | quit",
 		"  play [source] | pause | toggle",
 		"  source <id-or-name>",

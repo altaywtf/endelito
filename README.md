@@ -49,6 +49,17 @@ Open the player once with `bin/endelito show` to sign in or pick content. After 
 
 Sign-in persists across app restarts through WebKit's default website data store for `Endelito.app`. Rebuilding the app with the same bundle identifier keeps using the same WebKit session storage.
 
+## Install
+
+Released versions are available from the Homebrew tap:
+
+```sh
+brew tap altaywtf/tap
+brew install endelito
+```
+
+The formula installs both `Endelito.app` and the `endelito` CLI from the GitHub Release archive.
+
 ## How It Works
 
 The app registers the `endelito://` URL scheme. Commands like `bin/endelito play` send `endelito://play`; the Swift app receives the URL and forwards the action into the WebView.

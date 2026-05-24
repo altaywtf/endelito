@@ -6,14 +6,19 @@ APP_DIR := $(BUILD_DIR)/$(APP_NAME).app
 CONTENTS_DIR := $(APP_DIR)/Contents
 MACOS_DIR := $(CONTENTS_DIR)/MacOS
 RESOURCES_DIR := $(CONTENTS_DIR)/Resources
+DIST_DIR := dist
+PACKAGE_DIR := $(DIST_DIR)/$(APP_NAME)
+VERSION_FILE := VERSION
+RELEASE_VERSION ?= $(shell if test -f "$(VERSION_FILE)"; then tr -d '[:space:]' < "$(VERSION_FILE)"; else printf dev; fi)
+ARCH := $(shell uname -m)
 
-.PHONY: build build-cli build-app check-js doctor run smoke smoke-live verify clean clean-app
+.PHONY: build build-cli build-app package-release check-js doctor run smoke smoke-live verify clean clean-app
 
 build: build-cli build-app
 
 build-cli:
 	mkdir -p "$(BIN_DIR)"
-	go build -trimpath -ldflags="-s -w" -o "$(BIN_DIR)/endelito" ./cmd/endelito
+	go build -trimpath -ldflags="-s -w -X main.version=$(RELEASE_VERSION)" -o "$(BIN_DIR)/endelito" ./cmd/endelito
 	du -sh "$(BIN_DIR)/endelito"
 
 build-app:
@@ -25,6 +30,17 @@ build-app:
 	xcrun swiftc -Osize -framework AppKit -framework WebKit -o "$(MACOS_DIR)/$(EXECUTABLE)" app/Sources/Endelito/main.swift
 	codesign --force --sign - "$(APP_DIR)"
 	du -sh "$(APP_DIR)"
+
+package-release:
+	printf '%s\n' "$(RELEASE_VERSION)" > "$(VERSION_FILE)"
+	$(MAKE) build
+	rm -rf "$(DIST_DIR)"
+	mkdir -p "$(PACKAGE_DIR)"
+	cp -R "$(APP_DIR)" "$(PACKAGE_DIR)/"
+	cp "$(BIN_DIR)/endelito" "$(PACKAGE_DIR)/"
+	cp "$(VERSION_FILE)" "$(PACKAGE_DIR)/"
+	cp README.md LICENSE* "$(PACKAGE_DIR)/" 2>/dev/null || true
+	(cd "$(DIST_DIR)" && ditto -c -k --sequesterRsrc --keepParent "$(APP_NAME)" "endelito-macos-$(ARCH).zip")
 
 check-js:
 	node --check app/Resources/EndelitoBridge.js
@@ -47,7 +63,7 @@ verify:
 	$(MAKE) smoke
 
 clean: clean-app
-	rm -rf "$(BIN_DIR)"
+	rm -rf "$(BIN_DIR)" "$(DIST_DIR)"
 
 clean-app:
 	rm -rf "$(APP_DIR)"
