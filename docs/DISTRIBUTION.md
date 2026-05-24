@@ -23,7 +23,7 @@ brew tap altaywtf/tap
 brew install --cask endelito
 ```
 
-The cask lives at `Casks/endelito.rb` in `altaywtf/homebrew-tap` and points at the GitHub Release zip. It installs both `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask after semantic-release publishes a new version.
+The cask lives at `Casks/endelito.rb` in `altaywtf/homebrew-tap` and points at the GitHub Release zip through a `#{version}` URL template. It installs both `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask after semantic-release publishes a new version.
 
 ## Continuous Release
 
@@ -38,7 +38,7 @@ Semantic-release reads Conventional Commits on `main`. When a release is warrant
 2. Writes the version to `VERSION` and builds `dist/*.zip`.
 3. Commits `VERSION` back to `main` with `chore(release): <version> [skip ci]`.
 4. Creates a GitHub Release and uploads the zip asset from `dist/`.
-5. Bumps `altaywtf/homebrew-tap` through Homebrew's `brew bump-cask-pr`.
+5. Bumps the cask version and checksum in `altaywtf/homebrew-tap` through Homebrew's `brew bump-cask-pr`.
 
 The `[skip ci]` release commit is intentional: both CI jobs skip it so publishing does not recursively trigger another verify and release run.
 
