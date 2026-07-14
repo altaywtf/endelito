@@ -138,11 +138,11 @@ func launchApp() error {
 		}
 	}
 
-	if err := open("-b", appBundleID); err == nil {
-		return waitForAppRunning()
+	if err := open("-b", appBundleID); err != nil {
+		return fmt.Errorf("%s is not installed; run: make install (%w)", appName, err)
 	}
 
-	return fmt.Errorf("%s is not installed; run: make install", appName)
+	return waitForAppRunning()
 }
 
 func candidateAppPaths() []string {

@@ -56,4 +56,4 @@ Do not add required status checks, pull-request reviews, push restrictions, or a
 - Keep workflow actions pinned to full commit SHAs with same-line version comments.
 - Keep semantic-release and plugins pinned in the workflow `extra_plugins` block rather than adding release-only Node dependencies to the repo.
 - Keep the release job non-cancellable so a tag/release publish is not interrupted midway.
-- Dependabot updates GitHub Actions and Go modules through `.github/dependabot.yml`.
+- Dependabot updates GitHub Actions through `.github/dependabot.yml`. Go has no third-party modules, so there is no `gomod` Dependabot ecosystem entry.

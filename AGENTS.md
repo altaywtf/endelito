@@ -22,7 +22,7 @@ This repo is small. Keep the top level navigational and put implementation detai
 - When changing commands, URL schemes, bundle IDs, state paths, or build targets, update README, Contributing, and Architecture in the same change.
 - Local installs use `make install` (`/Applications/Endelito.app` + `$(PREFIX)/bin/endelito`); keep CLI app discovery in sync when install paths change.
 - This is a release repo, not a deploy repo; keep GitHub policy details in [Distribution](docs/DISTRIBUTION.md), not repeated across docs.
-- Dependabot tracks GitHub Actions and Go module updates through `.github/dependabot.yml`; keep action refs SHA-pinned with same-line version comments so update PRs can refresh them safely.
+- Dependabot tracks GitHub Actions updates through `.github/dependabot.yml`; keep action refs SHA-pinned with same-line version comments so update PRs can refresh them safely. Go has no third-party modules, so Dependabot does not watch `gomod`.
 - Keep GitHub collaboration files boring: PRs use the repo template, security reports stay private through `SECURITY.md`, and issue templates should not duplicate policy docs.
 
 ## Verification
