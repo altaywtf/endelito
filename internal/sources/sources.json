@@ -1,0 +1,31 @@
+{
+  "sources": [
+    { "id": "focus", "name": "Focus", "modality": "focus" },
+    { "id": "colored-noise", "name": "Colored Noise", "modality": "focus" },
+    { "id": "dynamic-focus", "name": "Dynamic Focus", "modality": "focus" },
+    { "id": "study", "name": "Study", "modality": "focus" },
+    { "id": "plastikman", "name": "Deeper Focus", "modality": "focus" },
+    { "id": "solfeggio-tones", "name": "Solfeggio Tones", "modality": "focus" },
+    { "id": "relax", "name": "Relax", "modality": "relax" },
+    { "id": "8d-odyssey", "name": "8D Odyssey", "modality": "relax" },
+    { "id": "nature-elements", "name": "Nature Elements", "modality": "relax" },
+    { "id": "spatial", "name": "Spatial Orbit", "modality": "relax" },
+    { "id": "recovery", "name": "Recovery", "modality": "relax" },
+    { "id": "wisdom", "name": "Wisdom", "modality": "relax" },
+    { "id": "sleep", "name": "Sleep", "modality": "sleep" },
+    { "id": "rainy", "name": "Rainy Outside", "modality": "sleep" },
+    { "id": "winddown", "name": "Wind Down", "modality": "sleep" },
+    { "id": "hibernation", "name": "Hibernation", "modality": "sleep" },
+    { "id": "grimes", "name": "Grimes", "modality": "sleep" }
+  ],
+  "aliases": {
+    "8d": "8d-odyssey",
+    "alan-watts": "wisdom",
+    "color-noise": "colored-noise",
+    "deeper": "plastikman",
+    "rainy-outside": "rainy",
+    "spatial-orbit": "spatial",
+    "wind-down": "winddown",
+    "wind-down-by-james-blake": "winddown"
+  }
+}

@@ -1,48 +1,29 @@
 import AppKit
 import WebKit
 
-private struct SourceDefinition {
+private struct SourceDefinition: Decodable {
     let id: String
     let name: String
     let modality: String
 }
 
+private struct SourceCatalogFile: Decodable {
+    let sources: [SourceDefinition]
+    let aliases: [String: String]
+}
+
 private let defaultSourceSlug = "focus"
-private let sourceDefinitions = [
-    SourceDefinition(id: "focus", name: "Focus", modality: "Focus"),
-    SourceDefinition(id: "colored-noise", name: "Colored Noise", modality: "Focus"),
-    SourceDefinition(id: "dynamic-focus", name: "Dynamic Focus", modality: "Focus"),
-    SourceDefinition(id: "study", name: "Study", modality: "Focus"),
-    SourceDefinition(id: "plastikman", name: "Deeper Focus", modality: "Focus"),
-    SourceDefinition(id: "solfeggio-tones", name: "Solfeggio Tones", modality: "Focus"),
-    SourceDefinition(id: "relax", name: "Relax", modality: "Relax"),
-    SourceDefinition(id: "8d-odyssey", name: "8D Odyssey", modality: "Relax"),
-    SourceDefinition(id: "nature-elements", name: "Nature Elements", modality: "Relax"),
-    SourceDefinition(id: "spatial", name: "Spatial Orbit", modality: "Relax"),
-    SourceDefinition(id: "recovery", name: "Recovery", modality: "Relax"),
-    SourceDefinition(id: "wisdom", name: "Wisdom", modality: "Relax"),
-    SourceDefinition(id: "sleep", name: "Sleep", modality: "Sleep"),
-    SourceDefinition(id: "rainy", name: "Rainy Outside", modality: "Sleep"),
-    SourceDefinition(id: "winddown", name: "Wind Down", modality: "Sleep"),
-    SourceDefinition(id: "hibernation", name: "Hibernation", modality: "Sleep"),
-    SourceDefinition(id: "grimes", name: "Grimes", modality: "Sleep")
-]
-private let sourceNames = Dictionary(uniqueKeysWithValues: sourceDefinitions.map { ($0.id, $0.name) })
-private let sourceAliases = [
-    "8d": "8d-odyssey",
-    "alan-watts": "wisdom",
-    "color-noise": "colored-noise",
-    "deeper": "plastikman",
-    "rainy-outside": "rainy",
-    "spatial-orbit": "spatial",
-    "wind-down": "winddown",
-    "wind-down-by-james-blake": "winddown"
-]
+private let trustedWebHosts: Set<String> = ["play.endel.io", "endel.io"]
 private let stateURL = FileManager.default
     .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
     .appendingPathComponent("Endelito", isDirectory: true)
     .appendingPathComponent("state.json", isDirectory: false)
 private let sessionStore = WKWebsiteDataStore.default()
+
+private let sourceCatalog = loadSourceCatalog()
+private let sourceDefinitions = sourceCatalog.sources
+private let sourceNames = Dictionary(uniqueKeysWithValues: sourceDefinitions.map { ($0.id, $0.name) })
+private let sourceAliases = sourceCatalog.aliases
 
 final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
     private var window: NSWindow?
@@ -51,7 +32,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var dynamicMenu: [[String: Any]] = []
     private var playbackState = PlaybackState(isPlaying: false)
     private var sourceSlug = defaultSourceSlug
+    private var pageURL: URL?
     private var playAfterNavigation = false
+    private var navigationGeneration = 0
+    private var pendingPlayGeneration: Int?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -122,7 +106,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                 sendDeepLink(url)
             }
         default:
-            break
+            writeDebug([
+                "ignoredCommand": command,
+                "receivedAt": ISO8601DateFormatter().string(from: Date())
+            ])
         }
     }
 
@@ -277,12 +264,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         var currentModality = ""
 
         for source in sourceDefinitions {
-            if source.modality != currentModality {
+            let modalityTitle = modalityDisplayName(source.modality)
+            if modalityTitle != currentModality {
                 if !currentModality.isEmpty {
                     submenu.addItem(NSMenuItem.separator())
                 }
 
-                currentModality = source.modality
+                currentModality = modalityTitle
                 let groupItem = NSMenuItem(title: currentModality, action: nil, keyEquivalent: "")
                 groupItem.isEnabled = false
                 submenu.addItem(groupItem)
@@ -326,15 +314,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }
 
         ensurePlayerLoaded(showWindow: false)
+        navigationGeneration += 1
+        let generation = navigationGeneration
         sourceSlug = source
         playAfterNavigation = playAfterLoad
+        pendingPlayGeneration = playAfterLoad ? generation : nil
         playbackState = PlaybackState(isPlaying: playAfterLoad)
         rebuildStatusMenu()
         writeState()
         playerView?.load(URLRequest(url: sourceURL(source)))
     }
 
+    private func schedulePlay(after delay: TimeInterval, generation: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            guard self.pendingPlayGeneration == generation,
+                  self.navigationGeneration == generation
+            else {
+                return
+            }
+            self.sendPlaybackCommand("play")
+        }
+    }
+
     private func clickPlaybackButton(_ action: String) {
+        let generation = navigationGeneration
         playerView?.evaluateJavaScript("__endelito.nativePlaybackClick(\(jsonString(action)))") { result, error in
             if let error {
                 self.writeDebug(["nativeClickError": String(describing: error)])
@@ -348,10 +351,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                 if action == "play",
                    let result = result as? [String: Any],
                    result["reason"] as? String == "no-playback-button" {
-                    self.playerView?.load(URLRequest(url: self.sourceURL(self.sourceSlug)))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        self.sendPlaybackCommand("play")
+                    guard self.navigationGeneration == generation else {
+                        return
                     }
+                    self.playerView?.load(URLRequest(url: self.sourceURL(self.sourceSlug)))
+                    self.pendingPlayGeneration = generation
+                    self.schedulePlay(after: 2, generation: generation)
                 }
                 return
             }
@@ -421,8 +426,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     private func normalizedSourceSlug(_ rawSource: String) -> String? {
-        let rawSource = rawSource.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let source = rawSource
+        var source = rawSource.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let url = URL(string: source), url.scheme != nil {
+            source = soundscapeSlug(from: url) ?? ""
+            if source.isEmpty {
+                return nil
+            }
+        }
+
+        source = source
+            .lowercased()
             .replacingOccurrences(of: "_", with: "-")
             .split(whereSeparator: { $0.isWhitespace })
             .joined(separator: "-")
@@ -447,11 +460,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         sourceNames[source] ?? source
     }
 
+    private func modalityDisplayName(_ modality: String) -> String {
+        guard let first = modality.first else {
+            return modality
+        }
+        return String(first).uppercased() + modality.dropFirst()
+    }
+
     private func sourceSlug(from url: URL?) -> String? {
         guard let url else {
             return nil
         }
 
+        return soundscapeSlug(from: url).flatMap(normalizedSourceSlug)
+    }
+
+    private func soundscapeSlug(from url: URL) -> String? {
         let components = url.pathComponents
         guard let index = components.firstIndex(of: "soundscape"),
               components.indices.contains(index + 1)
@@ -459,7 +483,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             return nil
         }
 
-        return normalizedSourceSlug(components[index + 1])
+        return components[index + 1]
     }
 
     private func evaluate(_ source: String) {
@@ -484,17 +508,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     private func writeDebug(_ value: Any) {
         let directory = stateURL.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            NSLog("Endelito failed to create debug directory: \(error)")
+            return
+        }
         let url = directory.appendingPathComponent("debug.json")
 
         guard JSONSerialization.isValidJSONObject(value),
               let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted, .sortedKeys])
         else {
-            try? "\(value)".data(using: .utf8)?.write(to: url, options: [.atomic])
+            do {
+                try "\(value)".data(using: .utf8)?.write(to: url, options: [.atomic])
+            } catch {
+                NSLog("Endelito failed to write debug file: \(error)")
+            }
             return
         }
 
-        try? data.write(to: url, options: [.atomic])
+        do {
+            try data.write(to: url, options: [.atomic])
+        } catch {
+            NSLog("Endelito failed to write debug file: \(error)")
+        }
     }
 
     private func jsonString(_ value: String) -> String {
@@ -507,8 +544,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         return string
     }
 
+    private func isTrustedBridgeMessage(_ message: WKScriptMessage) -> Bool {
+        let frame = message.frameInfo
+        let host = frame.securityOrigin.host.lowercased()
+        if trustedWebHosts.contains(host) || host.hasSuffix(".endel.io") {
+            return true
+        }
+
+        // about:blank / empty host frames are ignored; only Endel origins may drive state.
+        writeDebug([
+            "ignoredBridgeMessage": true,
+            "host": host,
+            "isMainFrame": frame.isMainFrame
+        ])
+        return false
+    }
+
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == "endelito",
+              isTrustedBridgeMessage(message),
               let body = message.body as? [String: Any],
               let type = body["type"] as? String
         else {
@@ -535,13 +589,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                let normalizedSource = normalizedSourceSlug(source),
                normalizedSource != sourceSlug {
                 let shouldResume = playbackState.isPlaying || body["wasPlaying"] as? Bool == true
+                navigationGeneration += 1
+                let generation = navigationGeneration
                 sourceSlug = normalizedSource
                 rebuildStatusMenu()
                 writeState()
                 if shouldResume {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.sendPlaybackCommand("play")
-                    }
+                    pendingPlayGeneration = generation
+                    schedulePlay(after: 1, generation: generation)
                 }
             }
         default:
@@ -551,29 +606,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     private func writeState() {
         let directory = stateURL.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            NSLog("Endelito failed to create state directory: \(error)")
+            return
+        }
+
+        let liveURL = playerView?.url ?? pageURL
+        let liveSource = sourceSlug(from: liveURL)
+        let resolvedSource = liveSource ?? (liveURL == nil ? sourceSlug : "")
+        let resolvedURL = liveURL?.absoluteString ?? sourceURL(sourceSlug).absoluteString
 
         let payload: [String: Any] = [
             "app": "Endelito",
-            "url": sourceURL(sourceSlug).absoluteString,
-            "source": sourceSlug,
-            "sourceName": sourceName(sourceSlug),
+            "url": resolvedURL,
+            "source": resolvedSource,
+            "sourceName": resolvedSource.isEmpty ? "" : sourceName(resolvedSource),
             "isPlaying": playbackState.isPlaying,
             "dynamicMenuCount": dynamicMenu.count,
             "updatedAt": ISO8601DateFormatter().string(from: Date())
         ]
 
         guard let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys]) else {
+            NSLog("Endelito failed to encode state.json")
             return
         }
 
-        try? data.write(to: stateURL, options: [.atomic])
+        do {
+            try data.write(to: stateURL, options: [.atomic])
+        } catch {
+            NSLog("Endelito failed to write state.json: \(error)")
+        }
     }
 
     func webView(
         _ webView: WKWebView,
         didFinish navigation: WKNavigation!
     ) {
+        pageURL = webView.url
         if let source = sourceSlug(from: webView.url) {
             sourceSlug = source
         }
@@ -583,9 +654,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
         if playAfterNavigation {
             playAfterNavigation = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.sendPlaybackCommand("play")
-            }
+            let generation = pendingPlayGeneration ?? navigationGeneration
+            schedulePlay(after: 1, generation: generation)
         }
     }
 
@@ -644,6 +714,22 @@ private func loadElectronCompatibilityShim() -> String {
     }
 
     return source
+}
+
+private func loadSourceCatalog() -> SourceCatalogFile {
+    guard let url = Bundle.main.url(forResource: "sources", withExtension: "json"),
+          let data = try? Data(contentsOf: url),
+          let catalog = try? JSONDecoder().decode(SourceCatalogFile.self, from: data),
+          !catalog.sources.isEmpty
+    else {
+        NSLog("Endelito sources catalog missing or invalid; using Focus fallback")
+        return SourceCatalogFile(
+            sources: [SourceDefinition(id: "focus", name: "Focus", modality: "focus")],
+            aliases: [:]
+        )
+    }
+
+    return catalog
 }
 
 let app = NSApplication.shared

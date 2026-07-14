@@ -4,13 +4,19 @@
 
 - macOS
 - Go 1.26 or newer
-- Node.js for bridge syntax checks
+- Node.js for bridge syntax and contract checks
 - Xcode command line tools with `swift`, `xcrun`, `iconutil`, and `codesign`
 
 ## Build
 
 ```sh
 make build
+```
+
+Install into Applications and PATH:
+
+```sh
+make install
 ```
 
 See [README](README.md) for user-facing CLI commands and [Architecture](docs/ARCHITECTURE.md) for the app, state file, URL scheme, and WebKit session model.
@@ -47,7 +53,8 @@ Use Conventional Commits. See [Distribution](docs/DISTRIBUTION.md) for release w
 
 ## Development Notes
 
-- `ENDELITO_APP=/path/to/Endelito.app bin/endelito launch` overrides the app path the CLI opens.
+- `ENDELITO_APP=/path/to/Endelito.app endelito launch` overrides the app path the CLI opens.
 - The app stores CLI-readable state at `~/Library/Application Support/Endelito/state.json`.
 - `bin/endelito debug` writes page inspection data next to the state file.
+- Soundscape IDs and aliases live in `internal/sources/sources.json`; update that catalog instead of duplicating lists in Go or Swift.
 - Build artifacts are ignored by git.

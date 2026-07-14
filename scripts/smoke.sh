@@ -49,10 +49,14 @@ NODE
 test -x "$CLI" || fail "missing CLI at $CLI"
 test -x "$APP/Contents/MacOS/Endelito" || fail "missing app executable"
 test -f "$RESOURCES/EndelitoBridge.js" || fail "missing WebKit bridge script"
+test -f "$RESOURCES/sources.json" || fail "missing sources catalog"
 test -f "$RESOURCES/AppIcon.icns" || fail "missing app icon"
 test -f "$RESOURCES/MenuBarIconTemplate.png" || fail "missing menu bar icon"
 
 "$CLI" --help | grep -q 'Usage: endelito <command>' || fail "CLI help did not render"
+"$CLI" --version | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$|^dev$' || fail "CLI version did not render"
+test "$(plutil -extract CFBundleShortVersionString raw -o - "$PLIST")" = "$(tr -d '[:space:]' < "$ROOT/VERSION")" || fail "app version was not stamped from VERSION"
+grep -q "endelito/$(tr -d '[:space:]' < "$ROOT/VERSION")" "$RESOURCES/EndelitoBridge.js" || fail "bridge version was not stamped from VERSION"
 
 test "$(plutil -extract CFBundleIdentifier raw -o - "$PLIST")" = "local.endelito" || fail "unexpected bundle id"
 test "$(plutil -extract CFBundleName raw -o - "$PLIST")" = "Endelito" || fail "unexpected bundle name"
