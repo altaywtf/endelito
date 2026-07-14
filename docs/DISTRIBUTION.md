@@ -12,7 +12,7 @@ make package-release
 
 The target runs `make build`, copies `build/Endelito.app`, `bin/endelito`, `VERSION`, and README/license material into `dist/Endelito/`, then creates `dist/endelito-<version>-macos-<arch>.zip`.
 
-The CLI binary embeds the release version from `VERSION`, so `bin/endelito --version` matches the semantic-release version when the archive is prepared.
+The CLI binary embeds the release version from `VERSION`, so `bin/endelito --version` matches the semantic-release version when the archive is prepared. `make build-app` also stamps `CFBundleShortVersionString` / `CFBundleVersion` in `Info.plist` and replaces `__ENDELITO_VERSION__` in the bundled WebKit bridge.
 
 ## Homebrew Cask
 
@@ -24,7 +24,7 @@ The cask lives at `Casks/endelito.rb` in `altaywtf/homebrew-tap` and points at t
 
 `.github/workflows/ci.yml` contains both jobs:
 
-- `verify` runs `make verify` on pushes and pull requests, except `[skip ci]` release commits.
+- `verify` runs `make verify` on pushes and pull requests, except `[skip ci]` release commits, then runs `make smoke-live` to exercise CLI → URL scheme → app state on the macOS runner.
 - `release` runs after `verify` on normal pushes to `main`.
 
 Both jobs run on GitHub's `macos-latest` runner.

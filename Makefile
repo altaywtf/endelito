@@ -11,8 +11,11 @@ PACKAGE_DIR := $(DIST_DIR)/$(APP_NAME)
 VERSION_FILE := VERSION
 RELEASE_VERSION ?= $(shell if test -f "$(VERSION_FILE)"; then tr -d '[:space:]' < "$(VERSION_FILE)"; else printf dev; fi)
 ARCH := $(shell uname -m)
+PREFIX ?= $(shell if command -v brew >/dev/null 2>&1; then brew --prefix; elif test -d /opt/homebrew/bin; then printf /opt/homebrew; else printf /usr/local; fi)
+APPLICATIONS_DIR ?= /Applications
+SOURCES_JSON := internal/sources/sources.json
 
-.PHONY: build build-cli build-app package-release check-js doctor run smoke smoke-live verify clean clean-app
+.PHONY: build build-cli build-app package-release check-js test-bridge doctor run install uninstall smoke smoke-live verify clean clean-app
 
 build: build-cli build-app
 
@@ -24,7 +27,10 @@ build-cli:
 build-app:
 	mkdir -p "$(MACOS_DIR)" "$(RESOURCES_DIR)"
 	cp app/Info.plist "$(CONTENTS_DIR)/Info.plist"
-	cp app/Resources/EndelitoBridge.js "$(RESOURCES_DIR)/EndelitoBridge.js"
+	plutil -replace CFBundleShortVersionString -string "$(RELEASE_VERSION)" "$(CONTENTS_DIR)/Info.plist"
+	plutil -replace CFBundleVersion -string "$(RELEASE_VERSION)" "$(CONTENTS_DIR)/Info.plist"
+	sed 's/__ENDELITO_VERSION__/$(RELEASE_VERSION)/g' app/Resources/EndelitoBridge.js > "$(RESOURCES_DIR)/EndelitoBridge.js"
+	cp "$(SOURCES_JSON)" "$(RESOURCES_DIR)/sources.json"
 	swift tools/GenerateAssets.swift "$(RESOURCES_DIR)"
 	iconutil -c icns "$(RESOURCES_DIR)/AppIcon.iconset" -o "$(RESOURCES_DIR)/AppIcon.icns"
 	xcrun swiftc -Osize -framework AppKit -framework WebKit -o "$(MACOS_DIR)/$(EXECUTABLE)" app/Sources/Endelito/main.swift
@@ -39,17 +45,33 @@ package-release:
 	cp -R "$(APP_DIR)" "$(PACKAGE_DIR)/"
 	cp "$(BIN_DIR)/endelito" "$(PACKAGE_DIR)/"
 	cp "$(VERSION_FILE)" "$(PACKAGE_DIR)/"
-	cp README.md LICENSE* "$(PACKAGE_DIR)/" 2>/dev/null || true
+	cp README.md LICENSE "$(PACKAGE_DIR)/"
 	(cd "$(DIST_DIR)" && ditto -c -k --sequesterRsrc --keepParent "$(APP_NAME)" "endelito-$(RELEASE_VERSION)-macos-$(ARCH).zip")
 
 check-js:
 	node --check app/Resources/EndelitoBridge.js
+
+test-bridge:
+	node scripts/test-bridge.mjs
 
 doctor:
 	scripts/doctor.sh
 
 run: build
 	"$(BIN_DIR)/endelito" launch
+
+install: build
+	ditto --rsrc --extattr "$(APP_DIR)" "$(APPLICATIONS_DIR)/$(APP_NAME).app"
+	mkdir -p "$(PREFIX)/bin"
+	install -m 755 "$(BIN_DIR)/endelito" "$(PREFIX)/bin/endelito"
+	@printf 'install: %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app"
+	@printf 'install: %s\n' "$(PREFIX)/bin/endelito"
+	@printf 'install: open the app once from Applications if Launch Services has not registered it yet\n'
+
+uninstall:
+	rm -rf "$(APPLICATIONS_DIR)/$(APP_NAME).app"
+	rm -f "$(PREFIX)/bin/endelito"
+	@printf 'uninstall: removed %s and %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app" "$(PREFIX)/bin/endelito"
 
 smoke: build
 	scripts/smoke.sh
@@ -59,6 +81,9 @@ smoke-live: build
 
 verify:
 	$(MAKE) check-js
+	$(MAKE) test-bridge
+	gofmt -l cmd internal | awk 'NF{print; exit 1}'
+	go vet ./...
 	go test ./...
 	$(MAKE) smoke
 

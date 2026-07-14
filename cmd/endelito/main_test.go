@@ -1,48 +1,52 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
-func TestNormalizeSource(t *testing.T) {
-	tests := []struct {
-		name string
-		raw  string
-		want string
-	}{
-		{name: "slug", raw: "focus", want: "focus"},
-		{name: "trim and lowercase", raw: "  Relax  ", want: "relax"},
-		{name: "route URL", raw: "https://play.endel.io/en/soundscape/dynamic-focus", want: "dynamic-focus"},
-		{name: "route URL with query", raw: "https://play.endel.io/en/soundscape/solfeggio-tones?foo=bar", want: "solfeggio-tones"},
-		{name: "space separated name", raw: "Nature Elements", want: "nature-elements"},
-		{name: "alias", raw: "rainy outside", want: "rainy"},
+func TestCandidateAppPathsIncludesApplications(t *testing.T) {
+	t.Setenv("ENDELITO_APP", "")
+	paths := candidateAppPaths()
+	found := false
+	for _, path := range paths {
+		if path == filepath.Join("/Applications", appName+".app") {
+			found = true
+			break
+		}
 	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := normalizeSource(test.raw)
-			if err != nil {
-				t.Fatalf("normalizeSource(%q) returned error: %v", test.raw, err)
-			}
-			if got != test.want {
-				t.Fatalf("normalizeSource(%q) = %q, want %q", test.raw, got, test.want)
-			}
-		})
+	if !found {
+		t.Fatalf("candidateAppPaths() = %v, want /Applications/%s.app", paths, appName)
 	}
 }
 
-func TestNormalizeSourceRejectsInvalidValues(t *testing.T) {
-	tests := []string{
-		"",
-		"white noise",
-		"../../focus",
-		"deep-work",
-		"https://play.endel.io/en/player",
+func TestCandidateAppPathsHonorsOverride(t *testing.T) {
+	override := filepath.Join(t.TempDir(), "Custom.app")
+	t.Setenv("ENDELITO_APP", override)
+	paths := candidateAppPaths()
+	if len(paths) != 1 || paths[0] != override {
+		t.Fatalf("candidateAppPaths() = %v, want [%s]", paths, override)
+	}
+}
+
+func TestReadState(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	dir := filepath.Join(home, "Library", "Application Support", appName)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	payload := []byte(`{"app":"Endelito","url":"https://play.endel.io/en/soundscape/focus","source":"focus","sourceName":"Focus","isPlaying":true,"dynamicMenuCount":2,"updatedAt":"2026-01-01T00:00:00Z"}`)
+	if err := os.WriteFile(filepath.Join(dir, "state.json"), payload, 0o644); err != nil {
+		t.Fatal(err)
 	}
 
-	for _, raw := range tests {
-		t.Run(raw, func(t *testing.T) {
-			if got, err := normalizeSource(raw); err == nil {
-				t.Fatalf("normalizeSource(%q) = %q, want error", raw, got)
-			}
-		})
+	state, err := readState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Source != "focus" || !state.IsPlaying || state.DynamicMenuCount != 2 {
+		t.Fatalf("unexpected state: %+v", state)
 	}
 }

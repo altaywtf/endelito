@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"endelito/internal/sources"
 )
 
 const (
@@ -19,43 +21,6 @@ const (
 )
 
 var version = "dev"
-
-type source struct {
-	ID       string
-	Name     string
-	Modality string
-}
-
-var sources = []source{
-	{ID: "focus", Name: "Focus", Modality: "focus"},
-	{ID: "colored-noise", Name: "Colored Noise", Modality: "focus"},
-	{ID: "dynamic-focus", Name: "Dynamic Focus", Modality: "focus"},
-	{ID: "study", Name: "Study", Modality: "focus"},
-	{ID: "plastikman", Name: "Deeper Focus", Modality: "focus"},
-	{ID: "solfeggio-tones", Name: "Solfeggio Tones", Modality: "focus"},
-	{ID: "relax", Name: "Relax", Modality: "relax"},
-	{ID: "8d-odyssey", Name: "8D Odyssey", Modality: "relax"},
-	{ID: "nature-elements", Name: "Nature Elements", Modality: "relax"},
-	{ID: "spatial", Name: "Spatial Orbit", Modality: "relax"},
-	{ID: "recovery", Name: "Recovery", Modality: "relax"},
-	{ID: "wisdom", Name: "Wisdom", Modality: "relax"},
-	{ID: "sleep", Name: "Sleep", Modality: "sleep"},
-	{ID: "rainy", Name: "Rainy Outside", Modality: "sleep"},
-	{ID: "winddown", Name: "Wind Down", Modality: "sleep"},
-	{ID: "hibernation", Name: "Hibernation", Modality: "sleep"},
-	{ID: "grimes", Name: "Grimes", Modality: "sleep"},
-}
-
-var sourceAliases = map[string]string{
-	"8d":                       "8d-odyssey",
-	"alan-watts":               "wisdom",
-	"color-noise":              "colored-noise",
-	"deeper":                   "plastikman",
-	"rainy-outside":            "rainy",
-	"spatial-orbit":            "spatial",
-	"wind-down":                "winddown",
-	"wind-down-by-james-blake": "winddown",
-}
 
 type liteState struct {
 	App              string `json:"app"`
@@ -94,7 +59,7 @@ func run(args []string) error {
 		return nil
 	case "play":
 		if len(args) > 1 {
-			source, err := normalizeSource(args[1])
+			source, err := sources.Normalize(args[1])
 			if err != nil {
 				return err
 			}
@@ -106,7 +71,7 @@ func run(args []string) error {
 		if len(args) < 2 {
 			return errors.New("expected: endelito source <id-or-name>")
 		}
-		source, err := normalizeSource(args[1])
+		source, err := sources.Normalize(args[1])
 		if err != nil {
 			return err
 		}
@@ -138,69 +103,9 @@ func usage() string {
 	}, "\n")
 }
 
-func normalizeSource(raw string) (string, error) {
-	source := strings.TrimSpace(raw)
-	if source == "" {
-		return "", errors.New("source cannot be empty")
-	}
-
-	if parsed, err := url.Parse(source); err == nil && parsed.Scheme != "" {
-		source = soundscapeSlugFromPath(parsed.Path)
-		if source == "" {
-			return "", fmt.Errorf("URL does not include a soundscape slug: %s", raw)
-		}
-	}
-
-	source = sourceID(source)
-	for _, char := range source {
-		if (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '-' {
-			continue
-		}
-
-		return "", fmt.Errorf("invalid source slug %q: use lowercase letters, numbers, and hyphens", raw)
-	}
-
-	if alias, ok := sourceAliases[source]; ok {
-		source = alias
-	}
-	if !isKnownSource(source) {
-		return "", fmt.Errorf("unknown source %q; run: endelito sources", raw)
-	}
-
-	return source, nil
-}
-
-func sourceID(raw string) string {
-	source := strings.ToLower(strings.TrimSpace(raw))
-	source = strings.ReplaceAll(source, "_", "-")
-	source = strings.Join(strings.Fields(source), "-")
-	return source
-}
-
-func isKnownSource(id string) bool {
-	for _, source := range sources {
-		if source.ID == id {
-			return true
-		}
-	}
-
-	return false
-}
-
-func soundscapeSlugFromPath(path string) string {
-	parts := strings.Split(strings.Trim(path, "/"), "/")
-	for index, part := range parts {
-		if part == "soundscape" && index+1 < len(parts) {
-			return parts[index+1]
-		}
-	}
-
-	return ""
-}
-
 func printSources() {
 	modality := ""
-	for _, source := range sources {
+	for _, source := range sources.All {
 		if source.Modality != modality {
 			modality = source.Modality
 			fmt.Printf("%s:\n", modality)
@@ -211,11 +116,14 @@ func printSources() {
 }
 
 func sendCommand(command string) error {
+	wasRunning := isAppRunning()
 	if err := launchApp(); err != nil {
 		return err
 	}
 
-	time.Sleep(150 * time.Millisecond)
+	if !wasRunning {
+		time.Sleep(150 * time.Millisecond)
+	}
 	return open(appScheme + "://" + command)
 }
 
@@ -224,21 +132,33 @@ func launchApp() error {
 		return nil
 	}
 
-	appPath := os.Getenv("ENDELITO_APP")
-	if appPath != "" {
-		return openAppBundle(appPath)
-	}
-
-	appPath, err := localAppPath()
-	if err == nil && pathExists(appPath) {
-		return openAppBundle(appPath)
+	for _, appPath := range candidateAppPaths() {
+		if pathExists(appPath) {
+			return openAppBundle(appPath)
+		}
 	}
 
 	if err := open("-b", appBundleID); err == nil {
 		return waitForAppRunning()
 	}
 
-	return err
+	return fmt.Errorf("%s is not installed; run: make install", appName)
+}
+
+func candidateAppPaths() []string {
+	if appPath := os.Getenv("ENDELITO_APP"); appPath != "" {
+		return []string{appPath}
+	}
+
+	paths := make([]string, 0, 3)
+	if localPath, err := localAppPath(); err == nil {
+		paths = append(paths, localPath)
+	}
+	paths = append(paths, filepath.Join("/Applications", appName+".app"))
+	if home, err := os.UserHomeDir(); err == nil {
+		paths = append(paths, filepath.Join(home, "Applications", appName+".app"))
+	}
+	return paths
 }
 
 func localAppPath() (string, error) {
@@ -301,6 +221,8 @@ func printStatus() error {
 		} else {
 			fmt.Printf("source: %s\n", state.Source)
 		}
+	} else if state.URL != "" {
+		fmt.Printf("url: %s\n", state.URL)
 	}
 	fmt.Printf("menu items: %d\n", state.DynamicMenuCount)
 	fmt.Printf("updated: %s\n", state.UpdatedAt)

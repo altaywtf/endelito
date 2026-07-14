@@ -258,7 +258,7 @@
   // Endelito implements only the small subset needed for playback/menu state
   // and leaves unsupported native surfaces as inert no-ops.
   window.electron = {
-    app: { getVersion: async () => "endelito/0.1.0" },
+    app: { getVersion: async () => "endelito/__ENDELITO_VERSION__" },
     iap: {
       canMakePayments: async () => false,
       getProducts: async () => [],

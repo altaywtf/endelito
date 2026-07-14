@@ -8,7 +8,7 @@ The shape is intentionally boring: one WebKit session, one menu bar app, one CLI
 - WebKit uses the default website data store, so the site session persists on this Mac.
 - The Go CLI launches the app, sends `endelito://` commands, and reads a tiny local state file.
 - There are no charts, dashboards, visualizations, or background provider scans.
-- The app opens the Focus soundscape by default and can switch between Endel's source icons.
+- The app opens the Focus soundscape by default and can switch across 17 known Focus, Relax, and Sleep soundscapes.
 
 ## Build
 
@@ -26,32 +26,17 @@ The app bundle includes generated icons:
 - `AppIcon.icns` for Finder/app identity
 - `MenuBarIconTemplate.png` for the macOS menu bar
 
-## Use
-
-```sh
-bin/endelito launch
-bin/endelito status
-bin/endelito show
-bin/endelito hide
-bin/endelito sources
-bin/endelito source focus
-bin/endelito source "nature elements"
-bin/endelito play dynamic-focus
-bin/endelito play
-bin/endelito pause
-bin/endelito toggle
-bin/endelito reload
-bin/endelito debug
-bin/endelito quit
-```
-
-Open the player once with `bin/endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback. The menu bar item includes a Source submenu with the known Focus, Relax, and Sleep sources. Use `bin/endelito sources` to list known source IDs. Use `bin/endelito source <id-or-name>` to load a source without starting playback, or `bin/endelito play <id-or-name>` to load and start it.
-
-Sign-in persists across app restarts through WebKit's default website data store for `Endelito.app`. Rebuilding the app with the same bundle identifier keeps using the same WebKit session storage.
-
 ## Install
 
-Released versions are available from the Homebrew tap:
+Install a local build into Applications and your PATH:
+
+```sh
+make install
+```
+
+This copies `build/Endelito.app` to `/Applications/Endelito.app` and installs `bin/endelito` to `$(brew --prefix)/bin/endelito` when Homebrew is present (otherwise `/usr/local/bin`). Override with `PREFIX=` / `APPLICATIONS_DIR=`.
+
+Released versions are also available from the Homebrew tap:
 
 ```sh
 brew tap altaywtf/tap
@@ -60,9 +45,33 @@ brew install --cask endelito
 
 The cask installs both `Endelito.app` and the `endelito` CLI from the GitHub Release archive.
 
+## Use
+
+```sh
+endelito launch
+endelito status
+endelito show
+endelito hide
+endelito sources
+endelito source focus
+endelito source "nature elements"
+endelito play dynamic-focus
+endelito play
+endelito pause
+endelito toggle
+endelito reload
+endelito debug
+endelito deeplink "https://play.endel.io/en/soundscape/focus"
+endelito quit
+```
+
+Open the player once with `endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback. The menu bar item includes a Source submenu with the known Focus, Relax, and Sleep soundscapes. Use `endelito sources` to list known source IDs. Use `endelito source <id-or-name>` to load a source without starting playback, or `endelito play <id-or-name>` to load and start it. Use `endelito deeplink <url>` to forward a URL into the web player's deeplink handlers.
+
+Sign-in persists across app restarts through WebKit's default website data store for `Endelito.app`. Rebuilding the app with the same bundle identifier keeps using the same WebKit session storage.
+
 ## How It Works
 
-The app registers the `endelito://` URL scheme. Commands like `bin/endelito play` send `endelito://play`; the Swift app receives the URL and forwards the action into the WebView.
+The app registers the `endelito://` URL scheme. Commands like `endelito play` send `endelito://play`; the Swift app receives the URL and forwards the action into the WebView.
 
 See [Architecture](docs/ARCHITECTURE.md) for the current control model and limitations.
 
@@ -72,7 +81,7 @@ See [Architecture](docs/ARCHITECTURE.md) for the current control model and limit
 make verify
 ```
 
-`make verify` syntax-checks the WebKit bridge, runs Go tests, builds the CLI and app, and checks the app bundle, URL scheme, icons, and CLI help.
+`make verify` syntax-checks the WebKit bridge, runs bridge contract tests, formats/vets Go, runs Go tests, builds the CLI and app, and checks the app bundle, URL scheme, icons, and CLI help.
 
 For a quick machine-readable environment and runtime snapshot:
 
