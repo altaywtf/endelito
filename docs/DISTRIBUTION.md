@@ -39,6 +39,8 @@ Semantic-release reads Conventional Commits on `main`. When a release is warrant
 
 The `[skip ci]` release commit is intentional: both CI jobs skip it so publishing does not recursively trigger another verify and release run.
 
+The release job allows up to 90 minutes for Apple's notarization queue before failing. Signing completes before submission; a notarization timeout is not an Apple rejection and remains visible in App Store Connect submission history.
+
 ## GitHub Policy
 
 Keep GitHub configured for direct maintainer pushes plus automated release writeback:

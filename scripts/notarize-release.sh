@@ -35,7 +35,7 @@ xcrun notarytool submit "$ARCHIVE" \
   --key-id "$NOTARY_API_KEY_ID" \
   --issuer "$NOTARY_API_ISSUER_ID" \
   --wait \
-  --timeout 30m \
+  --timeout 90m \
   --output-format plist > "$result"
 
 status="$(plutil -extract status raw -o - "$result")"
