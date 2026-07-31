@@ -10,40 +10,25 @@ The shape is intentionally boring: one WebKit session, one menu bar app, one CLI
 - There are no charts, dashboards, visualizations, or background provider scans.
 - The app opens the Focus soundscape by default and can switch across 17 known Focus, Relax, and Sleep soundscapes.
 
-## Build
-
-```sh
-make build
-```
-
-Outputs:
-
-- `bin/endelito`
-- `build/Endelito.app`
-
-The app bundle includes generated icons:
-
-- `AppIcon.icns` for Finder/app identity
-- `MenuBarIconTemplate.png` for the macOS menu bar
-
 ## Install
 
-Install a local build into Applications and your PATH:
-
-```sh
-make install
-```
-
-This copies `build/Endelito.app` to `/Applications/Endelito.app` and installs `bin/endelito` to `$(brew --prefix)/bin/endelito` when Homebrew is present (otherwise `/usr/local/bin`). Override with `PREFIX=` / `APPLICATIONS_DIR=`.
-
-Released versions are also available from the Homebrew tap:
+Install the signed and notarized release from the uinaf Homebrew tap:
 
 ```sh
 brew tap uinaf/tap
 brew install --cask endelito
 ```
 
-The cask installs both `Endelito.app` and the `endelito` CLI from the signed and notarized GitHub Release archive.
+The cask installs both `Endelito.app` and the `endelito` CLI from the latest [GitHub Release](https://github.com/uinaf/endelito/releases/latest).
+
+To build and install from source instead:
+
+```sh
+make build
+make install
+```
+
+This copies `build/Endelito.app` to `/Applications/Endelito.app` and installs `bin/endelito` to `$(brew --prefix)/bin/endelito` when Homebrew is present (otherwise `/usr/local/bin`). Override with `PREFIX=` / `APPLICATIONS_DIR=`.
 
 ## Use
 
@@ -75,7 +60,13 @@ The app registers the `endelito://` URL scheme. Commands like `endelito play` se
 
 See [Architecture](docs/ARCHITECTURE.md) for the current control model and limitations.
 
-## Verify
+## Build and Verify
+
+```sh
+make build
+```
+
+Build outputs are written to `bin/endelito` and `build/Endelito.app`. The app bundle includes generated Finder and menu bar icons.
 
 ```sh
 make verify
@@ -94,7 +85,13 @@ See [Contributing](CONTRIBUTING.md) for local validation and [Distribution](docs
 ## Docs
 
 - [Architecture](docs/ARCHITECTURE.md)
-- [Distribution](docs/DISTRIBUTION.md)
-- [Contributing](CONTRIBUTING.md)
+- [Release workflow](docs/DISTRIBUTION.md)
 - [Security](SECURITY.md)
-- [Agent guide](AGENTS.md)
+
+## Contributing
+
+See [Contributing](CONTRIBUTING.md) for setup, validation, and pull request expectations. Agent-specific repository rules are in [the agent guide](AGENTS.md).
+
+## License
+
+Endelito is available under the [MIT License](LICENSE).

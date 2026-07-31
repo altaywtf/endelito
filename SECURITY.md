@@ -2,7 +2,9 @@
 
 ## Reporting
 
-Please report security issues privately to [altay@hey.com](mailto:altay@hey.com) instead of opening a public issue.
+Please use [GitHub private vulnerability reporting](https://github.com/uinaf/endelito/security/advisories/new) instead of opening a public issue.
+
+Include the affected version, impact, reproduction steps, and any relevant logs with credentials and personal data removed.
 
 ## Scope
 
@@ -22,3 +24,7 @@ Security fixes target the latest GitHub Release and current `main`.
 - Keep generated debug output local and out of git.
 - Do not add Accessibility, global input monitoring, screen recording, key logging, or system-wide event posting without explicit approval.
 - Do not introduce network services or remote control endpoints unless they are reviewed as a new security surface.
+
+## Disclosure
+
+Please allow time to investigate and publish a fix before disclosing the issue publicly.

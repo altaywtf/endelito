@@ -1,6 +1,6 @@
 # Distribution
 
-Endelito is a versioned artifact repo. It publishes macOS app and CLI release assets through GitHub Releases; it does not deploy a running service.
+Endelito is a versioned artifact repo. It publishes macOS app and CLI assets through [GitHub Releases](https://github.com/uinaf/endelito/releases); it does not deploy a running service.
 
 ## Signed Package
 
@@ -18,11 +18,11 @@ The CLI binary embeds the release version from `VERSION`, so `bin/endelito --ver
 
 Released versions are installable through the tap; see [README](../README.md#install) for the user-facing command.
 
-The cask lives at `Casks/endelito.rb` in `uinaf/homebrew-tap` and points at the GitHub Release zip through a `#{version}` URL template. It installs both `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask after semantic-release publishes a new version.
+The cask lives at `Casks/endelito.rb` in [uinaf/homebrew-tap](https://github.com/uinaf/homebrew-tap) and points at the GitHub Release zip through a `#{version}` URL template. It installs both `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask after semantic-release publishes a new version.
 
 ## Continuous Release
 
-`.github/workflows/ci.yml` contains both jobs:
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) contains both jobs:
 
 - `verify` runs `make verify` on pushes and pull requests, except `[skip ci]` release commits, then runs `make smoke-live` to exercise CLI → URL scheme → app state on the macOS runner.
 - `release` runs after `verify` on normal pushes to `main`.
@@ -49,7 +49,7 @@ Keep GitHub configured for direct maintainer pushes plus automated release write
 - Merge policy: squash merge only; delete branches after merge.
 - Branch protection: required conversation resolution, no required status checks, no required pull request reviews, no push restrictions.
 - Actions policy: selected actions only; allow GitHub-owned actions, verified actions, `cycjimmy/semantic-release-action@*`, and `Homebrew/actions/setup-homebrew@*`.
-- Environment: the release job uses the approval-free `release` environment.
+- Environment: the release job uses the approval-free `release` environment, restricted to workflow runs from `main`.
 - Signing secrets: `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD`, and `APPLE_NOTARY_API_KEY_P8`.
 - Notarization variables: `APPLE_NOTARY_API_KEY_ID` and `APPLE_NOTARY_API_ISSUER_ID`.
 - Tap secret: `TAP_GITHUB_TOKEN` is a fine-grained token with `contents: write` on `uinaf/homebrew-tap` only.

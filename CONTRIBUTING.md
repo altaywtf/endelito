@@ -47,8 +47,10 @@ Use Conventional Commits. Releases run only in GitHub Actions because the releas
 
 ## Pull Requests
 
+- Create a focused branch from current `main` and open a pull request against `main`.
 - Use the repo pull request template.
 - Include meaningful verification in the PR description.
+- Include the review aid that best explains a non-trivial change: a focused diagram, labeled screenshot, or sanitized input/output example.
 - Keep vulnerability reports out of public issues; use [Security](SECURITY.md).
 
 ## Development Notes
