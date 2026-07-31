@@ -43,7 +43,7 @@ make doctor
 
 ## Release
 
-Use Conventional Commits. See [Distribution](docs/DISTRIBUTION.md) for release workflow, Homebrew cask, GitHub settings, and branch-policy expectations.
+Use Conventional Commits. Releases run only in GitHub Actions because the release environment owns the Developer ID and notarization credentials. See [Distribution](docs/DISTRIBUTION.md) for the release workflow, Homebrew cask, GitHub settings, and branch-policy expectations.
 
 ## Pull Requests
 

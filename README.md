@@ -39,11 +39,11 @@ This copies `build/Endelito.app` to `/Applications/Endelito.app` and installs `b
 Released versions are also available from the Homebrew tap:
 
 ```sh
-brew tap altaywtf/tap
+brew tap uinaf/tap
 brew install --cask endelito
 ```
 
-The cask installs both `Endelito.app` and the `endelito` CLI from the GitHub Release archive.
+The cask installs both `Endelito.app` and the `endelito` CLI from the signed and notarized GitHub Release archive.
 
 ## Use
 

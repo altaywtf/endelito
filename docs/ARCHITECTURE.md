@@ -81,7 +81,7 @@ Generated assets are build outputs and are not committed.
 - Source selection uses a checked-in ID list from the web player's current source icons. New or renamed sources need a catalog update in `internal/sources/sources.json`.
 - Playback from CLI depends on WebKit accepting the in-app control path. Manual WebView clicks are the baseline fallback.
 - Login, purchase, notifications, and OAuth/deep-link auth flows need real-use validation before treating the app as a daily-driver replacement.
-- Release packaging publishes GitHub Release assets; the app has no in-app update flow yet.
+- Release packaging publishes Developer ID-signed and Apple-notarized GitHub Release assets; the app has no in-app update flow yet.
 
 ## Future Work
 

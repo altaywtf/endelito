@@ -14,8 +14,9 @@ ARCH := $(shell uname -m)
 PREFIX ?= $(shell if command -v brew >/dev/null 2>&1; then brew --prefix; elif test -d /opt/homebrew/bin; then printf /opt/homebrew; else printf /usr/local; fi)
 APPLICATIONS_DIR ?= /Applications
 SOURCES_JSON := internal/sources/sources.json
+CODESIGN_IDENTITY ?=
 
-.PHONY: build build-cli build-app package-release check-js test-bridge doctor run install uninstall smoke smoke-live verify clean clean-app
+.PHONY: build build-cli build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge doctor run install uninstall smoke smoke-live verify clean clean-app
 
 build: build-cli build-app
 
@@ -37,9 +38,25 @@ build-app:
 	codesign --force --sign - "$(APP_DIR)"
 	du -sh "$(APP_DIR)"
 
+sign-release:
+	@test -n "$(CODESIGN_IDENTITY)" || { printf 'sign-release: CODESIGN_IDENTITY is required\n' >&2; exit 1; }
+	codesign --force --options runtime --timestamp --sign "$(CODESIGN_IDENTITY)" "$(BIN_DIR)/endelito"
+	codesign --force --options runtime --timestamp --sign "$(CODESIGN_IDENTITY)" "$(APP_DIR)"
+	$(MAKE) verify-release-signatures
+
+verify-release-signatures:
+	codesign --verify --strict --verbose=2 "$(BIN_DIR)/endelito"
+	codesign --verify --deep --strict --verbose=2 "$(APP_DIR)"
+	@codesign -d --verbose=4 "$(BIN_DIR)/endelito" 2>&1 | grep -q 'Authority=Developer ID Application:'
+	@codesign -d --verbose=4 "$(APP_DIR)" 2>&1 | grep -q 'Authority=Developer ID Application:'
+	@codesign -d --verbose=4 "$(BIN_DIR)/endelito" 2>&1 | grep -q 'runtime'
+	@codesign -d --verbose=4 "$(APP_DIR)" 2>&1 | grep -q 'runtime'
+
 package-release:
+	@test -n "$(CODESIGN_IDENTITY)" || { printf 'package-release: CODESIGN_IDENTITY is required\n' >&2; exit 1; }
 	printf '%s\n' "$(RELEASE_VERSION)" > "$(VERSION_FILE)"
 	$(MAKE) build
+	$(MAKE) sign-release CODESIGN_IDENTITY="$(CODESIGN_IDENTITY)"
 	rm -rf "$(DIST_DIR)"
 	mkdir -p "$(PACKAGE_DIR)"
 	cp -R "$(APP_DIR)" "$(PACKAGE_DIR)/"
@@ -47,6 +64,9 @@ package-release:
 	cp "$(VERSION_FILE)" "$(PACKAGE_DIR)/"
 	cp README.md LICENSE "$(PACKAGE_DIR)/"
 	(cd "$(DIST_DIR)" && ditto -c -k --sequesterRsrc --keepParent "$(APP_NAME)" "endelito-$(RELEASE_VERSION)-macos-$(ARCH).zip")
+
+notarize-release: package-release
+	scripts/notarize-release.sh "$(DIST_DIR)/endelito-$(RELEASE_VERSION)-macos-$(ARCH).zip" "$(PACKAGE_DIR)/$(APP_NAME).app"
 
 check-js:
 	node --check app/Resources/EndelitoBridge.js
