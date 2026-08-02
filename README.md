@@ -1,3 +1,5 @@
+![endelito — tiny macOS menu bar app and CLI for playing Endel without Electron.](https://uinaf.dev/og/banner/endelito.png)
+
 # Endelito
 
 `endelito` is a small Go CLI plus a native Swift menu bar app for playing Endel from the website without the Electron desktop wrapper.
