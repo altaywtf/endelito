@@ -57,6 +57,24 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Import signing assets
+        id: signing
+        env:
+          APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
+          APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          APPLE_NOTARY_API_KEY_P8: ${{ secrets.APPLE_NOTARY_API_KEY_P8 }}
+          APPLE_NOTARY_API_KEY_ID: ${{ vars.APPLE_NOTARY_API_KEY_ID }}
+        run: scripts/import-signing-assets.sh
+
+      # Mint after signing-asset import so the ~1h installation token is not
+      # burned before authenticated release writes. Notarization still runs
+      # inside semantic-release; remint again before the Homebrew cask push.
       - name: Create release bot token
         id: release-bot
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -75,21 +93,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.release-bot.outputs.token }}
         run: gh auth setup-git
-
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: false
-
-      - name: Import signing assets
-        id: signing
-        env:
-          APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64 }}
-          APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
-          APPLE_NOTARY_API_KEY_P8: ${{ secrets.APPLE_NOTARY_API_KEY_P8 }}
-          APPLE_NOTARY_API_KEY_ID: ${{ vars.APPLE_NOTARY_API_KEY_ID }}
-        run: scripts/import-signing-assets.sh
 
       - name: Release
         id: release
@@ -115,20 +118,39 @@ jobs:
           NOTARY_API_KEY_ID: ${{ vars.APPLE_NOTARY_API_KEY_ID }}
           NOTARY_API_ISSUER_ID: ${{ vars.APPLE_NOTARY_API_ISSUER_ID }}
 
+      - name: Create tap bot token
+        if: ${{ steps.release.outputs.new_release_published == 'true' }}
+        id: tap-bot
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.UINAF_RELEASE_APP_ID }}
+          private-key: ${{ secrets.UINAF_RELEASE_APP_PRIVATE_KEY }}
+          owner: uinaf
+          repositories: |
+            endelito
+            homebrew-tap
+          permission-contents: write
+
+      - name: Authorize tap writes
+        if: ${{ steps.release.outputs.new_release_published == 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
+        run: gh auth setup-git
+
       - name: Set up Homebrew
         if: ${{ steps.release.outputs.new_release_published == 'true' }}
         uses: Homebrew/actions/setup-homebrew@9af03b7ae3f9e2ae5c174f659d5c3909f7e7dbac # main
         with:
-          brew-gh-api-token: ${{ github.token }}
+          brew-gh-api-token: ${{ steps.tap-bot.outputs.token }}
 
       - name: Update Homebrew cask
         if: ${{ steps.release.outputs.new_release_published == 'true' }}
         env:
-          GH_TOKEN: ${{ steps.release-bot.outputs.token }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
+          HOMEBREW_GITHUB_API_TOKEN: ${{ steps.tap-bot.outputs.token }}
           VERSION: ${{ steps.release.outputs.new_release_version }}
-          RELEASE_BOT_NAME: ${{ steps.release-bot.outputs.app-slug }}[bot]
-          RELEASE_BOT_EMAIL: 312581908+${{ steps.release-bot.outputs.app-slug }}[bot]@users.noreply.github.com
+          RELEASE_BOT_NAME: ${{ steps.tap-bot.outputs.app-slug }}[bot]
+          RELEASE_BOT_EMAIL: 312581908+${{ steps.tap-bot.outputs.app-slug }}[bot]@users.noreply.github.com
         run: |
           set -euo pipefail
           brew tap uinaf/tap
