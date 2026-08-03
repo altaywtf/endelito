@@ -100,7 +100,14 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.release-bot.outputs.token }}
           APP_SLUG: ${{ steps.release-bot.outputs.app-slug }}
-        run: echo "user-id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        run: |
+          set -euo pipefail
+          user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          if [[ ! "$user_id" =~ ^[0-9]+$ ]]; then
+            echo "failed to resolve numeric bot user id for ${APP_SLUG}[bot]" >&2
+            exit 1
+          fi
+          echo "user-id=${user_id}" >> "$GITHUB_OUTPUT"
 
       - name: Release
         id: release
@@ -151,7 +158,14 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
           APP_SLUG: ${{ steps.tap-bot.outputs.app-slug }}
-        run: echo "user-id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        run: |
+          set -euo pipefail
+          user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          if [[ ! "$user_id" =~ ^[0-9]+$ ]]; then
+            echo "failed to resolve numeric bot user id for ${APP_SLUG}[bot]" >&2
+            exit 1
+          fi
+          echo "user-id=${user_id}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Homebrew
         if: ${{ steps.release.outputs.new_release_published == 'true' }}
