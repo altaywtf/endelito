@@ -41,9 +41,15 @@ For environment and runtime diagnostics:
 make doctor
 ```
 
-## Release
+## Releases
 
-Use Conventional Commits. Releases run only in GitHub Actions because the release environment owns the Developer ID and notarization credentials. See [Distribution](docs/DISTRIBUTION.md) for the release workflow, Homebrew cask, GitHub settings, and branch-policy expectations.
+Use Conventional Commits (`feat:`, `fix:`, `docs:`, …) — they drive versions.
+
+Successful pushes to protected `main` evaluate commits after `verify` passes.
+The release job mints a short-lived `uinaf-releaser` token inside the
+`release` Environment, signs/notarizes, creates the GitHub Release, and updates
+the Homebrew cask. See [Releases](docs/RELEASES.md) and
+[Distribution](docs/DISTRIBUTION.md).
 
 ## Pull Requests
 
