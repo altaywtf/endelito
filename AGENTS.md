@@ -6,9 +6,10 @@ This repo is small. Keep the top level navigational and put implementation detai
 
 - [README](README.md) — product shape, build, install, CLI usage
 - [Architecture](docs/ARCHITECTURE.md) — control model, catalog, install paths, WebKit bridge
-- [Distribution](docs/DISTRIBUTION.md) — CI, release, Homebrew, GitHub policy
-- [Contributing](CONTRIBUTING.md) — local validation and PR expectations
-- [Security](SECURITY.md) — reporting and privacy expectations
+- [Contributing](CONTRIBUTING.md) — setup, verify, pull requests
+- [Releases](docs/RELEASES.md) — Conventional Commits publish path
+- [Distribution](docs/DISTRIBUTION.md) — signed package, Homebrew, GitHub policy
+- [Security](SECURITY.md) — private vulnerability reporting
 
 ## Hard rules
 

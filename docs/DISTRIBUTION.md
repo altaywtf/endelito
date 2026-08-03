@@ -48,13 +48,13 @@ Keep GitHub configured for direct maintainer pushes plus automated release write
 - Default branch: `main`.
 - Merge policy: squash merge only; delete branches after merge.
 - Branch protection: required conversation resolution, no required status checks, no required pull request reviews, no push restrictions.
-- Actions policy: selected actions only; allow GitHub-owned actions, verified actions, `cycjimmy/semantic-release-action@*`, and `Homebrew/actions/setup-homebrew@*`.
+- Actions policy: selected actions only; allow GitHub-owned actions, verified actions, `actions/create-github-app-token@*`, `cycjimmy/semantic-release-action@*`, and `Homebrew/actions/setup-homebrew@*`.
 - Environment: the release job uses the approval-free `release` environment, restricted to workflow runs from `main`.
+- GitHub writes: short-lived `uinaf-releaser` installation token (`UINAF_RELEASE_APP_ID` + `UINAF_RELEASE_APP_PRIVATE_KEY`) scoped to `endelito` + `homebrew-tap`.
 - Signing secrets: `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64`, `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD`, and `APPLE_NOTARY_API_KEY_P8`.
 - Notarization variables: `APPLE_NOTARY_API_KEY_ID` and `APPLE_NOTARY_API_ISSUER_ID`.
-- Tap secret: `TAP_GITHUB_TOKEN` is a fine-grained token with `contents: write` on `uinaf/homebrew-tap` only.
 
-Do not add required status checks, pull-request reviews, push restrictions, or a PR-required ruleset unless the semantic-release writeback path is redesigned first.
+See [Releases](RELEASES.md) for the publish contract. Do not add required status checks, pull-request reviews, push restrictions, or a PR-required ruleset unless the semantic-release writeback path is redesigned first.
 
 ## Workflow Maintenance
 

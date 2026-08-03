@@ -42,9 +42,11 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: macos-latest
     timeout-minutes: 105
-    environment: release
+    environment:
+      name: release
+      deployment: false
     permissions:
-      contents: write
+      contents: read
     concurrency:
       group: release-${{ github.repository }}-main
       cancel-in-progress: false
@@ -54,6 +56,25 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Create release bot token
+        id: release-bot
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.UINAF_RELEASE_APP_ID }}
+          private-key: ${{ secrets.UINAF_RELEASE_APP_PRIVATE_KEY }}
+          owner: uinaf
+          repositories: |
+            endelito
+            homebrew-tap
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Authorize release writes
+        env:
+          GH_TOKEN: ${{ steps.release-bot.outputs.token }}
+        run: gh auth setup-git
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -83,11 +104,12 @@ jobs:
             @semantic-release/git@10.0.1
             @semantic-release/github@12.0.8
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GITHUB_TOKEN: ${{ steps.release-bot.outputs.token }}
+          GH_TOKEN: ${{ steps.release-bot.outputs.token }}
+          GIT_AUTHOR_NAME: ${{ steps.release-bot.outputs.app-slug }}[bot]
+          GIT_AUTHOR_EMAIL: 312581908+${{ steps.release-bot.outputs.app-slug }}[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: ${{ steps.release-bot.outputs.app-slug }}[bot]
+          GIT_COMMITTER_EMAIL: 312581908+${{ steps.release-bot.outputs.app-slug }}[bot]@users.noreply.github.com
           CODESIGN_IDENTITY: ${{ steps.signing.outputs.codesign_identity }}
           NOTARY_API_KEY_PATH: ${{ steps.signing.outputs.notary_api_key_path }}
           NOTARY_API_KEY_ID: ${{ vars.APPLE_NOTARY_API_KEY_ID }}
@@ -102,15 +124,17 @@ jobs:
       - name: Update Homebrew cask
         if: ${{ steps.release.outputs.new_release_published == 'true' }}
         env:
+          GH_TOKEN: ${{ steps.release-bot.outputs.token }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
-          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
           VERSION: ${{ steps.release.outputs.new_release_version }}
+          RELEASE_BOT_NAME: ${{ steps.release-bot.outputs.app-slug }}[bot]
+          RELEASE_BOT_EMAIL: 312581908+${{ steps.release-bot.outputs.app-slug }}[bot]@users.noreply.github.com
         run: |
           set -euo pipefail
           brew tap uinaf/tap
           tap_repo="$(brew --repo uinaf/tap)"
-          git -C "$tap_repo" config user.name "github-actions[bot]"
-          git -C "$tap_repo" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -C "$tap_repo" remote set-url origin "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/uinaf/homebrew-tap.git"
+          git -C "$tap_repo" config user.name "${RELEASE_BOT_NAME}"
+          git -C "$tap_repo" config user.email "${RELEASE_BOT_EMAIL}"
+          git -C "$tap_repo" remote set-url origin "https://github.com/uinaf/homebrew-tap.git"
           brew bump-cask-pr --write-only --commit --version "$VERSION" uinaf/tap/endelito
           git -C "$tap_repo" push origin HEAD:main
