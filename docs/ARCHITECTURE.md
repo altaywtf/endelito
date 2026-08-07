@@ -5,9 +5,11 @@ Endelito has two pieces:
 - A Go CLI at `cmd/endelito`.
 - A native Swift menu bar app at `app/Sources/Endelito`.
 
-The CLI is intentionally thin. It opens the app bundle through Launch Services, sends `endelito://` commands through Launch Services, and reads local state.
+The CLI is intentionally thin. It opens the app bundle through Launch Services,
+sends `endelito://` commands through Launch Services, and reads local state.
 
-The Swift app owns the WebKit session and player window. It is an accessory app (`LSUIElement`) with no Dock icon.
+The Swift app owns the WebKit session and player window. It is an accessory app
+(`LSUIElement`) with no Dock icon. Bundle id: `local.endelito`.
 
 ## Control Flow
 
@@ -29,21 +31,38 @@ The CLI looks for `Endelito.app` in this order:
 4. `~/Applications/Endelito.app`
 5. Launch Services bundle id `local.endelito`
 
-`make install` copies the built app into `/Applications` and the CLI into `$(PREFIX)/bin` (default `/usr/local/bin`).
+`make install` copies the built app into `/Applications` and the CLI into
+`$(PREFIX)/bin` (default Homebrew prefix when present, otherwise `/usr/local`).
 
 ## WebView
 
-The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps login/session state in WebKit-managed storage for this app, keyed by the app identity. Rebuilding `Endelito.app` with the same bundle identifier keeps using the same WebKit session store.
+The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps
+login/session state in WebKit-managed storage for this app, keyed by the app
+identity. Rebuilding `Endelito.app` with the same bundle identifier keeps using
+the same WebKit session store.
 
-Do not switch to `.nonPersistent()` or a custom throwaway data store for the player. Session persistence is part of the app contract.
+Do not switch to `.nonPersistent()` or a custom throwaway data store for the
+player. Session persistence is part of the app contract.
 
-Bridge script messages are accepted only from trusted Endel web origins (`play.endel.io` / `*.endel.io`).
+Bridge script messages are accepted only from trusted Endel web origins
+(`play.endel.io` / `*.endel.io`).
 
-The current default page is the Focus source. Source selection is ID based and matches Endel's visible source icons. The menu bar Source submenu and `source <id-or-name>` load a known soundscape route, and `play <id-or-name>` loads then starts that route. The supported IDs are the Focus, Relax, and Sleep soundscapes listed in the shared catalog.
+The current default page is the Focus source. Source selection is ID based and
+matches Endel's visible source icons. The menu bar Source submenu and
+`source <id-or-name>` load a known soundscape route, and `play <id-or-name>`
+loads then starts that route. The supported IDs are the Focus, Relax, and Sleep
+soundscapes listed in the shared catalog.
 
-The app injects the bundled [EndelitoBridge.js](../app/Resources/EndelitoBridge.js) compatibility shim for the website APIs used by the desktop wrapper, including playback state, menu commands, source route changes, and deeplink callbacks. The shim also observes controllable media playback and WebAudio context state so the CLI state can follow page-driven or system-driven changes such as AirPlay pausing playback. Decorative muted looping videos are ignored.
+The app injects the bundled
+[EndelitoBridge.js](../app/Resources/EndelitoBridge.js) compatibility shim for
+the website APIs used by the desktop wrapper, including playback state, menu
+commands, source route changes, and deeplink callbacks. The shim also observes
+controllable media playback and WebAudio context state so the CLI state can
+follow page-driven or system-driven changes such as AirPlay pausing playback.
+Decorative muted looping videos are ignored.
 
-Playback targets the player button inside the WebView. The app intentionally avoids Accessibility permissions and system-wide input events.
+Playback targets the player button inside the WebView. The app intentionally
+avoids Accessibility permissions and system-wide input events.
 
 ## Shared source catalog
 
@@ -51,7 +70,9 @@ Known soundscapes and aliases live in one file:
 
 - [internal/sources/sources.json](../internal/sources/sources.json)
 
-Go embeds that file via `endelito/internal/sources`. The app build copies it into `Endelito.app/Contents/Resources/sources.json` for the Swift menu and validation path.
+Go embeds that file via `endelito/internal/sources`. The app build copies it
+into `Endelito.app/Contents/Resources/sources.json` for the Swift menu and
+validation path.
 
 ## Local Files
 
@@ -60,13 +81,19 @@ Go embeds that file via `endelito/internal/sources`. The app build copies it int
 - App bundle (build): `build/Endelito.app`
 - App bundle (installed): `/Applications/Endelito.app`
 - CLI binary (build): `bin/endelito`
-- CLI binary (installed): `$(brew --prefix)/bin/endelito` when Homebrew is present, otherwise `/usr/local/bin/endelito`
+- CLI binary (installed): `$(brew --prefix)/bin/endelito` when Homebrew is
+  present, otherwise `/usr/local/bin/endelito`
 
 ## Icons and versioning
 
-Resources are bundled during `make build-app`. The WebKit bridge is copied from [EndelitoBridge.js](../app/Resources/EndelitoBridge.js) with `__ENDELITO_VERSION__` replaced by `RELEASE_VERSION`, and icons are generated by [GenerateAssets.swift](../tools/GenerateAssets.swift). `Info.plist` version fields are stamped from the same `RELEASE_VERSION` (usually `VERSION`).
+Resources are bundled during `make build-app`. The WebKit bridge is copied from
+[EndelitoBridge.js](../app/Resources/EndelitoBridge.js) with
+`__ENDELITO_VERSION__` replaced by `RELEASE_VERSION`, and icons are generated by
+[GenerateAssets.swift](../tools/GenerateAssets.swift). `Info.plist` version
+fields are stamped from the same `RELEASE_VERSION` (usually `VERSION`).
 
-`make verify` runs `node --check` and bridge contract tests before building so page-control JavaScript fails fast outside the app.
+`make verify` runs `node --check` and bridge contract tests before building so
+page-control JavaScript fails fast outside the app.
 
 Generated outputs include:
 
@@ -78,12 +105,11 @@ Generated assets are build outputs and are not committed.
 
 ## Current Limits
 
-- Source selection uses a checked-in ID list from the web player's current source icons. New or renamed sources need a catalog update in `internal/sources/sources.json`.
-- Playback from CLI depends on WebKit accepting the in-app control path. Manual WebView clicks are the baseline fallback.
-- Login, purchase, notifications, and OAuth/deep-link auth flows need real-use validation before treating the app as a daily-driver replacement.
-- Release packaging publishes Developer ID-signed and Apple-notarized GitHub Release assets; the app has no in-app update flow yet.
-
-## Future Work
-
-- Refresh the source list if Endel adds or renames web player source icons.
-- Keep advanced Endel features opt-in rather than expanding the menu bar app into a full desktop clone.
+- Source selection uses a checked-in ID list from the web player's current
+  source icons. New or renamed sources need a catalog update in
+  `internal/sources/sources.json`.
+- Playback from CLI depends on WebKit accepting the in-app control path. Manual
+  WebView clicks are the baseline fallback.
+- Login, purchase, notifications, and OAuth/deep-link auth flows need real-use
+  validation before treating the app as a daily-driver replacement.
+- Updates come from GitHub Releases / Homebrew; there is no in-app updater.

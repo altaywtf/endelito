@@ -34,7 +34,7 @@ Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Di
 
 | Name | Kind |
 |---|---|
-| `UINAF_RELEASE_APP_ID` | variable |
+| `UINAF_RELEASE_APP_CLIENT_ID` | variable |
 | `UINAF_RELEASE_APP_PRIVATE_KEY` | secret |
 | `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64` | secret |
 | `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD` | secret |
@@ -46,10 +46,22 @@ Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Di
 
 Pre-merge (release Environment):
 
-- [ ] `UINAF_RELEASE_APP_ID` is set
+- [ ] `UINAF_RELEASE_APP_CLIENT_ID` is set
 - [ ] `UINAF_RELEASE_APP_PRIVATE_KEY` is set
 
 Post-merge (first real release after credential or workflow changes):
 
 - [ ] Release commit / GitHub Release is attributed to `uinaf-releaser[bot]`
 - [ ] `uinaf/homebrew-tap` `Casks/endelito.rb` bumps for the new version
+
+## Recover a stuck publish
+
+If notarization or signing succeeded but GitHub publish left a draft release or a
+`v*` tag without assets:
+
+1. Delete the draft GitHub Release if present.
+2. Delete the orphan `v*` tag. `protect-release-tags` blocks normal deletes;
+   `uinaf-releaser` can bypass, or a maintainer can briefly disable that ruleset.
+3. Fix the failure (for asset upload on Node 24, keep
+   `@semantic-release/github` at `12.0.9` or newer).
+4. Push a releasable Conventional Commit to `main` so the pipeline republishes.

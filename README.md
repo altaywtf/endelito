@@ -87,7 +87,8 @@ See [Contributing](CONTRIBUTING.md) for local validation and [Distribution](docs
 ## Docs
 
 - [Architecture](docs/ARCHITECTURE.md)
-- [Release workflow](docs/DISTRIBUTION.md)
+- [Releases](docs/RELEASES.md)
+- [Distribution](docs/DISTRIBUTION.md)
 - [Security](SECURITY.md)
 
 ## Contributing

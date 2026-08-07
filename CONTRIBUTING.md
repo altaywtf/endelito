@@ -45,11 +45,10 @@ make doctor
 
 Use Conventional Commits (`feat:`, `fix:`, `docs:`, …) — they drive versions.
 
-Successful pushes to protected `main` evaluate commits after `verify` passes.
-The release job mints a short-lived `uinaf-releaser` token inside the
-`release` Environment, signs/notarizes, creates the GitHub Release, and updates
-the Homebrew cask. See [Releases](docs/RELEASES.md) and
-[Distribution](docs/DISTRIBUTION.md).
+Successful pushes to `main` evaluate commits after `verify` passes. The release
+job mints a short-lived `uinaf-releaser` token inside the `release` Environment,
+signs/notarizes, creates the GitHub Release, and updates the Homebrew cask. See
+[Releases](docs/RELEASES.md) and [Distribution](docs/DISTRIBUTION.md).
 
 ## Pull Requests
 
