@@ -21,11 +21,13 @@ Conventional Commits drive the bump:
 2. Protected `release` Environment imports Apple signing assets, then mints a
    short-lived `uinaf-releaser` installation token scoped to `endelito` +
    `homebrew-tap`
-3. `semantic-release` signs/notarizes, commits `VERSION`, and creates a mutable
-   draft GitHub Release containing the notarized zip
+3. `semantic-release` signs/notarizes and creates a mutable draft GitHub
+   Release containing the notarized zip
 4. The workflow validates the draft asset manifest, publishes it once, and
    verifies GitHub's immutable-release attestation
-5. The job remints a fresh App token, then Homebrew bumps
+5. The workflow commits `VERSION` back to `main` through GitHub's signed App
+   commit API
+6. The job remints a fresh App token, then Homebrew bumps
    `Casks/endelito.rb` on `uinaf/homebrew-tap`
 
 Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Distribution](DISTRIBUTION.md).

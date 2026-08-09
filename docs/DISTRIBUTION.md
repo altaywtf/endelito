@@ -58,10 +58,11 @@ warranted, it:
 2. Writes the version to `VERSION`, imports the uinaf Developer ID identity into
    an ephemeral runner keychain, signs the app and CLI, notarizes the archive,
    staples the app ticket, and builds the final `dist/*.zip`.
-3. Commits `VERSION` back to `main` with `chore(release): <version> [skip ci]`.
-4. Creates a draft GitHub Release and uploads the zip asset from `dist/`.
-5. Validates the draft manifest, publishes the release once, and verifies its
+3. Creates a draft GitHub Release and uploads the zip asset from `dist/`.
+4. Validates the draft manifest, publishes the release once, and verifies its
    immutable-release attestation.
+5. Commits `VERSION` back to `main` through GitHub's signed App commit API with
+   `chore(release): <version> [skip ci]`.
 6. Bumps the cask version and checksum in `uinaf/homebrew-tap` through
    Homebrew's `brew bump-cask-pr`, including Homebrew's cask audit and style
    checks before pushing the tap commit.
@@ -81,11 +82,11 @@ writeback:
 - Default branch: `main`.
 - Merge policy: squash merge only; delete branches after merge.
 - Ruleset `protect-main` on the default branch: block deletion and
-  non-fast-forward updates; require signed commits. `uinaf-releaser` may bypass.
+  non-fast-forward updates; require signed commits without a release App bypass.
 - Ruleset `protect-release-tags` on `refs/tags/v*`: block tag deletion and
   updates; require signed tags. `uinaf-releaser` may bypass.
 - No required status checks, pull-request reviews, or push restrictions that
-  would block semantic-release writeback to `main`.
+  would block signed release-version writeback to `main`.
 - Actions policy: selected actions only; allow GitHub-owned actions, verified
   actions, `actions/create-github-app-token@*`,
   `cycjimmy/semantic-release-action@*`, and
