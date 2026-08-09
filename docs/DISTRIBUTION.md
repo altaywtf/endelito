@@ -58,11 +58,11 @@ warranted, it:
 2. Writes the version to `VERSION`, imports the uinaf Developer ID identity into
    an ephemeral runner keychain, signs the app and CLI, notarizes the archive,
    staples the app ticket, and builds the final `dist/*.zip`.
-3. Creates a draft GitHub Release and uploads the zip asset from `dist/`.
-4. Validates the draft manifest, publishes the release once, and verifies its
+3. Commits `VERSION` to `main` through GitHub's signed App commit API, then
+   creates the version tag from that commit.
+4. Creates a draft GitHub Release and uploads the zip asset from `dist/`.
+5. Validates the draft manifest, publishes the release once, and verifies its
    immutable-release attestation.
-5. Commits `VERSION` back to `main` through GitHub's signed App commit API with
-   `chore(release): <version> [skip ci]`.
 6. Bumps the cask version and checksum in `uinaf/homebrew-tap` through
    Homebrew's `brew bump-cask-pr`, including Homebrew's cask audit and style
    checks before pushing the tap commit.

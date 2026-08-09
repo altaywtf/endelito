@@ -107,6 +107,7 @@ jobs:
             @semantic-release/release-notes-generator@14.1.1
             conventional-changelog-conventionalcommits@9.3.1
             @semantic-release/exec@7.1.0
+            @jno21/semantic-release-github-commit@1.0.1
             @semantic-release/github@12.0.9
         env:
           GITHUB_TOKEN: ${{ steps.release-bot.outputs.token }}
@@ -260,41 +261,3 @@ jobs:
           repository: homebrew-tap
         env:
           GITHUB_TOKEN: ${{ steps.tap-bot.outputs.token }}
-
-  sync-released-version:
-    if: needs.release.outputs.release_ready == 'true'
-    needs: [release]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment:
-      name: release
-      deployment: false
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          ref: main
-      - name: Create release bot token
-        id: release-bot
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.UINAF_RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.UINAF_RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-      - name: Prepare released version
-        env:
-          RELEASE_VERSION: ${{ needs.release.outputs.release_version }}
-        run: printf '%s\n' "$RELEASE_VERSION" > VERSION
-      - name: Commit released version
-        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
-        with:
-          commit_message: "chore(release): ${{ needs.release.outputs.release_version }} [skip ci]"
-          repo: ${{ github.repository }}
-          branch: main
-          file_pattern: VERSION
-        env:
-          GITHUB_TOKEN: ${{ steps.release-bot.outputs.token }}
