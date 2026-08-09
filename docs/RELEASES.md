@@ -21,9 +21,11 @@ Conventional Commits drive the bump:
 2. Protected `release` Environment imports Apple signing assets, then mints a
    short-lived `uinaf-releaser` installation token scoped to `endelito` +
    `homebrew-tap`
-3. `semantic-release` signs/notarizes, commits `VERSION`, and creates the
-   GitHub Release
-4. The job remints a fresh App token, then Homebrew bumps
+3. `semantic-release` signs/notarizes, commits `VERSION`, and creates a mutable
+   draft GitHub Release containing the notarized zip
+4. The workflow validates the draft asset manifest, publishes it once, and
+   verifies GitHub's immutable-release attestation
+5. The job remints a fresh App token, then Homebrew bumps
    `Casks/endelito.rb` on `uinaf/homebrew-tap`
 
 Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Distribution](DISTRIBUTION.md).
@@ -56,12 +58,11 @@ Post-merge (first real release after credential or workflow changes):
 
 ## Recover a stuck publish
 
-If notarization or signing succeeded but GitHub publish left a draft release or a
-`v*` tag without assets:
+If notarization, upload, or publication fails after the tag exists, fix the
+underlying failure and rerun the failed workflow. The workflow discovers the
+single mutable draft on `main`, validates its asset manifest, and publishes it
+without choosing a new version. If publication succeeded and only the Homebrew
+update failed, the rerun skips release mutation and resumes at the tap update.
 
-1. Delete the draft GitHub Release if present.
-2. Delete the orphan `v*` tag. `protect-release-tags` blocks normal deletes;
-   `uinaf-releaser` can bypass, or a maintainer can briefly disable that ruleset.
-3. Fix the failure (for asset upload on Node 24, keep
-   `@semantic-release/github` at `12.0.9` or newer).
-4. Push a releasable Conventional Commit to `main` so the pipeline republishes.
+Never delete or move a published `v*` tag. Published releases and their assets
+are immutable; only an unpublished draft may be repaired or deleted.

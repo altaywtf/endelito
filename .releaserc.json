@@ -14,6 +14,7 @@
     [
       "@semantic-release/github",
       {
+        "draftRelease": true,
         "assets": [
           { "path": "dist/*.zip", "label": "Endelito macOS bundle and CLI" }
         ]

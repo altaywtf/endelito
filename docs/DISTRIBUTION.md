@@ -38,7 +38,7 @@ The cask lives at `Casks/endelito.rb` in
 [uinaf/homebrew-tap](https://github.com/uinaf/homebrew-tap) and points at the
 GitHub Release zip through a `#{version}` URL template. It installs both
 `Endelito.app` and the `endelito` CLI. The release workflow bumps that cask
-after semantic-release publishes a new version.
+only after GitHub verifies the published immutable release.
 
 ## Continuous Release
 
@@ -59,8 +59,10 @@ warranted, it:
    an ephemeral runner keychain, signs the app and CLI, notarizes the archive,
    staples the app ticket, and builds the final `dist/*.zip`.
 3. Commits `VERSION` back to `main` with `chore(release): <version> [skip ci]`.
-4. Creates a GitHub Release and uploads the zip asset from `dist/`.
-5. Bumps the cask version and checksum in `uinaf/homebrew-tap` through
+4. Creates a draft GitHub Release and uploads the zip asset from `dist/`.
+5. Validates the draft manifest, publishes the release once, and verifies its
+   immutable-release attestation.
+6. Bumps the cask version and checksum in `uinaf/homebrew-tap` through
    Homebrew's `brew bump-cask-pr`, including Homebrew's cask audit and style
    checks before pushing the tap commit.
 
@@ -112,5 +114,7 @@ the semantic-release writeback path is redesigned first.
   upload release assets.
 - Keep the release job non-cancellable so a tag/release publish is not
   interrupted midway.
+- Keep immutable releases enabled. Upload and validation must finish against a
+  mutable draft; the Homebrew update starts only after publication succeeds.
 - Dependabot updates GitHub Actions through `.github/dependabot.yml`. Go has no
   third-party modules, so there is no `gomod` Dependabot ecosystem entry.
