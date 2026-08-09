@@ -77,8 +77,7 @@ jobs:
         run: scripts/import-signing-assets.sh
 
       # Mint after signing-asset import so the ~1h installation token is not
-      # burned before authenticated release writes. Notarization still runs
-      # inside semantic-release; remint again before the Homebrew cask push.
+      # burned before authenticated release writes.
       - name: Create release bot token
         id: release-bot
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -203,8 +202,18 @@ jobs:
           gh release verify "$RELEASE_TAG"
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
+  update-homebrew-tap:
+    if: needs.release.outputs.release_ready == 'true'
+    needs: [release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    steps:
       - name: Create tap bot token
-        if: ${{ steps.finalized.outputs.ready == 'true' }}
         id: tap-bot
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -215,51 +224,42 @@ jobs:
             endelito
             homebrew-tap
           permission-contents: write
-
-      - name: Authorize tap writes
-        if: ${{ steps.finalized.outputs.ready == 'true' }}
-        env:
-          GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
-        run: gh auth setup-git
-
-      - name: Resolve tap bot identity
-        if: ${{ steps.finalized.outputs.ready == 'true' }}
-        id: tap-bot-identity
-        env:
-          GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
-          APP_SLUG: ${{ steps.tap-bot.outputs.app-slug }}
-        run: |
-          set -euo pipefail
-          user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
-          if [[ ! "$user_id" =~ ^[0-9]+$ ]]; then
-            echo "failed to resolve numeric bot user id for ${APP_SLUG}[bot]" >&2
-            exit 1
-          fi
-          echo "user-id=${user_id}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Homebrew
-        if: ${{ steps.finalized.outputs.ready == 'true' }}
-        uses: Homebrew/actions/setup-homebrew@9af03b7ae3f9e2ae5c174f659d5c3909f7e7dbac # main
+      - name: Check out tap
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          brew-gh-api-token: ${{ steps.tap-bot.outputs.token }}
-
-      - name: Update Homebrew cask
-        if: ${{ steps.finalized.outputs.ready == 'true' }}
+          repository: uinaf/homebrew-tap
+          token: ${{ steps.tap-bot.outputs.token }}
+          path: homebrew-tap
+          persist-credentials: false
+          ref: main
+      - name: Prepare cask
         env:
           GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ steps.tap-bot.outputs.token }}
-          VERSION: ${{ steps.release-target.outputs.version }}
-          RELEASE_BOT_NAME: ${{ steps.tap-bot.outputs.app-slug }}[bot]
-          RELEASE_BOT_EMAIL: ${{ steps.tap-bot-identity.outputs.user-id }}+${{ steps.tap-bot.outputs.app-slug }}[bot]@users.noreply.github.com
+          VERSION: ${{ needs.release.outputs.release_version }}
         run: |
           set -euo pipefail
-          brew tap uinaf/tap
-          tap_repo="$(brew --repo uinaf/tap)"
-          git -C "$tap_repo" config user.name "${RELEASE_BOT_NAME}"
-          git -C "$tap_repo" config user.email "${RELEASE_BOT_EMAIL}"
-          git -C "$tap_repo" remote set-url origin "https://github.com/uinaf/homebrew-tap.git"
-          brew bump-cask-pr --write-only --commit --version "$VERSION" uinaf/tap/endelito
-          git -C "$tap_repo" push origin HEAD:main
+          asset="endelito-${VERSION}-macos-arm64.zip"
+          gh release download "v${VERSION}" --repo uinaf/endelito --pattern "$asset" --dir "$RUNNER_TEMP"
+          sha256="$(sha256sum "$RUNNER_TEMP/$asset" | awk '{print $1}')"
+          SHA256="$sha256" ruby -e '
+            path = ARGV.fetch(0)
+            text = File.read(path)
+            text.sub!(/version "[^"]+"/, %(version "#{ENV.fetch("VERSION")}")) or abort "version not found"
+            text.sub!(/sha256 "[0-9a-f]+"/, %(sha256 "#{ENV.fetch("SHA256")}")) or abort "sha256 not found"
+            File.write(path, text)
+          ' homebrew-tap/Casks/endelito.rb
+          grep -F "version \"${VERSION}\"" homebrew-tap/Casks/endelito.rb
+          grep -F "sha256 \"${sha256}\"" homebrew-tap/Casks/endelito.rb
+      - name: Commit cask
+        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
+        with:
+          commit_message: "endelito ${{ needs.release.outputs.release_version }}"
+          repo: uinaf/homebrew-tap
+          branch: main
+          file_pattern: Casks/endelito.rb
+          repository: homebrew-tap
+        env:
+          GITHUB_TOKEN: ${{ steps.tap-bot.outputs.token }}
 
   sync-released-version:
     if: needs.release.outputs.release_ready == 'true'
