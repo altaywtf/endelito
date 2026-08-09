@@ -50,6 +50,9 @@ jobs:
     concurrency:
       group: release-${{ github.repository }}-main
       cancel-in-progress: false
+    outputs:
+      release_ready: ${{ steps.finalized.outputs.ready }}
+      release_version: ${{ steps.release-target.outputs.version }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -200,26 +203,6 @@ jobs:
           gh release verify "$RELEASE_TAG"
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
-      - name: Stage released version
-        if: steps.finalized.outputs.ready == 'true'
-        env:
-          RELEASE_VERSION: ${{ steps.release-target.outputs.version }}
-        run: |
-          printf '%s\n' "$RELEASE_VERSION" > VERSION
-          git add -- VERSION
-
-      - name: Normalize commit target
-        if: steps.finalized.outputs.ready == 'true'
-        run: git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
-
-      - name: Commit released version
-        if: steps.finalized.outputs.ready == 'true'
-        uses: grafana/github-api-commit-action@b1d81091e8480dd11fcea8bc1f0ab977a0376ca5 # v1.0.0
-        with:
-          commit-message: "chore(release): ${{ steps.release-target.outputs.version }} [skip ci]"
-          success-if-no-changes: true
-          token: ${{ steps.release-bot.outputs.token }}
-
       - name: Create tap bot token
         if: ${{ steps.finalized.outputs.ready == 'true' }}
         id: tap-bot
@@ -277,3 +260,41 @@ jobs:
           git -C "$tap_repo" remote set-url origin "https://github.com/uinaf/homebrew-tap.git"
           brew bump-cask-pr --write-only --commit --version "$VERSION" uinaf/tap/endelito
           git -C "$tap_repo" push origin HEAD:main
+
+  sync-released-version:
+    if: needs.release.outputs.release_ready == 'true'
+    needs: [release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: release
+      deployment: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: main
+      - name: Create release bot token
+        id: release-bot
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.UINAF_RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.UINAF_RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - name: Prepare released version
+        env:
+          RELEASE_VERSION: ${{ needs.release.outputs.release_version }}
+        run: printf '%s\n' "$RELEASE_VERSION" > VERSION
+      - name: Commit released version
+        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
+        with:
+          commit_message: "chore(release): ${{ needs.release.outputs.release_version }} [skip ci]"
+          repo: ${{ github.repository }}
+          branch: main
+          file_pattern: VERSION
+        env:
+          GITHUB_TOKEN: ${{ steps.release-bot.outputs.token }}
