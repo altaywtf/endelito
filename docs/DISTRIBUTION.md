@@ -55,14 +55,14 @@ Semantic-release reads Conventional Commits on `main`. When a release is
 warranted, it:
 
 1. Computes the next version using the `conventionalcommits` preset.
-2. Writes the version to `VERSION`, imports the uinaf Developer ID identity into
-   an ephemeral runner keychain, signs the app and CLI, notarizes the archive,
-   staples the app ticket, and builds the final `dist/*.zip`.
-3. Creates a draft GitHub Release and uploads the zip asset from `dist/`.
-4. Validates the draft manifest, publishes the release once, and verifies its
+2. Writes the version to `VERSION` and commits it to `main` through GitHub's
+   signed App commit API.
+3. Signs the app and CLI from that commit, notarizes the archive, staples the
+   app ticket, and builds the final `dist/*.zip`.
+4. Creates the version tag and a draft GitHub Release, then uploads the zip
+   asset from `dist/`.
+5. Validates the draft manifest, publishes the release once, and verifies its
    immutable-release attestation.
-5. Commits `VERSION` back to `main` through GitHub's signed App commit API with
-   `chore(release): <version> [skip ci]`.
 6. Bumps the cask version and checksum in `uinaf/homebrew-tap` through
    Homebrew's `brew bump-cask-pr`, including Homebrew's cask audit and style
    checks before pushing the tap commit.
