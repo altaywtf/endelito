@@ -56,6 +56,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref: main
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -206,6 +207,10 @@ jobs:
         run: |
           printf '%s\n' "$RELEASE_VERSION" > VERSION
           git add -- VERSION
+
+      - name: Normalize commit target
+        if: steps.finalized.outputs.ready == 'true'
+        run: git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
 
       - name: Commit released version
         if: steps.finalized.outputs.ready == 'true'
