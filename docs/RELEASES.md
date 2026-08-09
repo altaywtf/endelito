@@ -21,8 +21,8 @@ Conventional Commits drive the bump:
 2. Protected `release` Environment imports Apple signing assets, then mints a
    short-lived `uinaf-releaser` installation token scoped to `endelito` +
    `homebrew-tap`
-3. `semantic-release` signs/notarizes, commits `VERSION` through GitHub's signed
-   App commit API, then creates the version tag and a mutable draft GitHub
+3. `semantic-release` commits `VERSION` through GitHub's signed App commit API,
+   signs/notarizes from that commit, then creates the version tag and a mutable draft GitHub
    Release containing the notarized zip
 4. The workflow validates the draft asset manifest, publishes it once, and
    verifies GitHub's immutable-release attestation
