@@ -22,9 +22,9 @@ Conventional Commits drive the bump:
    short-lived `uinaf-releaser` installation token scoped to `endelito` +
    `homebrew-tap`
 3. `semantic-release` commits `VERSION` through GitHub's signed App commit API,
-   signs/notarizes from that commit, then creates the version tag and a mutable draft GitHub
-   Release containing the notarized zip; authenticated release lookup retries
-   for up to one minute and fails if the expected draft remains unavailable
+   signs/notarizes from that commit, then creates the version tag and a mutable
+   draft GitHub Release containing the notarized zip; exact-tag lookup fails if
+   the expected Release is unavailable
 4. The workflow validates the draft asset manifest, publishes it once, and
    verifies GitHub's immutable-release attestation
 5. The job remints a fresh App token, then Homebrew bumps
