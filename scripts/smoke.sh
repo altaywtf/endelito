@@ -57,7 +57,10 @@ cleanup_owned() {
     for pid in $OWNED_PIDS; do
       pid_is_owned_executable "$pid" && kill -KILL "$pid" 2>/dev/null || true
     done
-    wait_for_owned_exit || result=1
+    if ! wait_for_owned_exit; then
+      printf 'smoke: owned app processes remain after KILL\n' >&2
+      [[ "$result" -ne 0 ]] || result=1
+    fi
   fi
   exit "$result"
 }
