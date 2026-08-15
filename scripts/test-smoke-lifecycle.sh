@@ -7,7 +7,7 @@ EXECUTABLE="$ROOT/build/Endelito.app/Contents/MacOS/Endelito"
 pids() {
   ps -axo pid=,comm= | awk -v executable="$EXECUTABLE" '
     { pid = $1; sub(/^[[:space:]]*[0-9]+[[:space:]]+/, ""); if ($0 == executable) print pid }
-  '
+  ' | sort -n
 }
 
 assert_snapshot() {

@@ -15,13 +15,13 @@ fail() {
 }
 
 pids_for_executable() {
-	ps -axo pid=,comm= | awk -v executable="$EXECUTABLE" '
-		{ pid = $1; sub(/^[[:space:]]*[0-9]+[[:space:]]+/, ""); if ($0 == executable) print pid }
-	'
+  ps -axo pid=,comm= | awk -v executable="$EXECUTABLE" '
+    { pid = $1; sub(/^[[:space:]]*[0-9]+[[:space:]]+/, ""); if ($0 == executable) print pid }
+  '
 }
 
 pid_is_owned_executable() {
-	[[ "$(ps -p "$1" -o comm= 2>/dev/null)" == "$EXECUTABLE" ]]
+  [[ "$(ps -p "$1" -o comm= 2>/dev/null)" == "$EXECUTABLE" ]]
 }
 
 new_pids() {
