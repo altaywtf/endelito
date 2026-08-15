@@ -98,6 +98,7 @@ smoke: build
 
 smoke-live: build
 	ENDELITO_SMOKE_LAUNCH=1 scripts/smoke.sh
+	scripts/test-smoke-lifecycle.sh
 
 verify:
 	$(MAKE) check-js

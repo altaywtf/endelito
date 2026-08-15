@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 APP="$ROOT/build/Endelito.app"
 CLI="$ROOT/bin/endelito"
+EXECUTABLE="$APP/Contents/MacOS/Endelito"
 PLIST="$APP/Contents/Info.plist"
 RESOURCES="$APP/Contents/Resources"
 STATE="$HOME/Library/Application Support/Endelito/state.json"
@@ -13,15 +14,55 @@ fail() {
   exit 1
 }
 
-wait_for_process_exit() {
+pids_for_executable() {
+  ps -axo pid=,comm= | awk -v executable="$EXECUTABLE" '
+    { pid = $1; sub(/^[[:space:]]*[0-9]+[[:space:]]+/, ""); if ($0 == executable) print pid }
+  '
+}
+
+pid_is_owned_executable() {
+  [[ "$(ps -p "$1" -o comm= 2>/dev/null)" == "$EXECUTABLE" ]]
+}
+
+new_pids() {
+  pids_for_executable | while read -r pid; do
+    grep -qx "$pid" <<<"$PREEXISTING_PIDS" || printf '%s\n' "$pid"
+  done
+}
+
+wait_for_owned_exit() {
   for _ in $(seq 1 20); do
-    if ! pgrep -x Endelito >/dev/null; then
-      return
+    local alive=0
+    for pid in $OWNED_PIDS; do
+      pid_is_owned_executable "$pid" && alive=1
+    done
+    if [[ "$alive" == "0" ]]; then
+      return 0
     fi
     sleep 0.1
   done
+  return 1
+}
 
-  fail "app did not quit"
+cleanup_owned() {
+  local result=$?
+  trap - EXIT INT TERM
+  if [[ -z "$OWNED_PIDS" ]]; then
+    OWNED_PIDS="$(new_pids)"
+  fi
+  for pid in $OWNED_PIDS; do
+    pid_is_owned_executable "$pid" && kill "$pid" 2>/dev/null || true
+  done
+  if ! wait_for_owned_exit; then
+    for pid in $OWNED_PIDS; do
+      pid_is_owned_executable "$pid" && kill -KILL "$pid" 2>/dev/null || true
+    done
+    if ! wait_for_owned_exit; then
+      printf 'smoke: owned app processes remain after KILL\n' >&2
+      [[ "$result" -ne 0 ]] || result=1
+    fi
+  fi
+  exit "$result"
 }
 
 wait_for_state() {
@@ -46,6 +87,10 @@ NODE
   fail "state did not reach: $description"
 }
 
+send_app_command() {
+  open -a "$APP" "endelito://$1"
+}
+
 test -x "$CLI" || fail "missing CLI at $CLI"
 test -x "$APP/Contents/MacOS/Endelito" || fail "missing app executable"
 test -f "$RESOURCES/EndelitoBridge.js" || fail "missing WebKit bridge script"
@@ -64,30 +109,42 @@ test "$(plutil -extract CFBundleURLTypes.0.CFBundleURLSchemes.0 raw -o - "$PLIST
 test "$(plutil -extract LSUIElement raw -o - "$PLIST")" = "true" || fail "app is not menu-bar-only"
 
 if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
+  PREEXISTING_PIDS="$(pids_for_executable)"
+  OWNED_PIDS=""
+  trap cleanup_owned EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
   rm -f "$STATE"
-  pkill -x Endelito >/dev/null 2>&1 || true
-  wait_for_process_exit
-  ENDELITO_APP="$APP" "$CLI" launch
+  open -na "$APP" "endelito://launch"
+  sleep "${ENDELITO_SMOKE_CAPTURE_DELAY:-0}"
+  for _ in $(seq 1 20); do
+    OWNED_PIDS="$(new_pids)"
+    [[ -n "$OWNED_PIDS" ]] && break
+    sleep 0.1
+  done
+  [[ -n "$OWNED_PIDS" ]] || fail "launched app PID was not found"
+
+  [[ "${ENDELITO_SMOKE_INJECT_FAILURE:-0}" != "1" ]] || fail "injected post-launch failure"
+  if [[ "${ENDELITO_SMOKE_HOLD_AFTER_LAUNCH:-0}" == "1" ]]; then
+    while :; do sleep 1; done
+  fi
 
   wait_for_state "initial launch state" "focus" "false"
   "$CLI" status | grep -q '^Endelito:' || fail "status did not read app state"
 
-  ENDELITO_APP="$APP" "$CLI" source relax
+  send_app_command "source?slug=relax"
   wait_for_state "source command selects Relax while paused" "relax" "false"
 
-  ENDELITO_APP="$APP" "$CLI" play focus
+  send_app_command "play?source=focus"
   wait_for_state "play command selects Focus" "focus" "*"
 
-  ENDELITO_APP="$APP" "$CLI" source sleep
+  send_app_command "source?slug=sleep"
   wait_for_state "source command selects Sleep" "sleep" "*"
 
-  ENDELITO_APP="$APP" "$CLI" pause
+  send_app_command pause
   wait_for_state "pause command stops playback" "sleep" "false"
 
   "$CLI" status | grep -q '^source: sleep (Sleep)$' || fail "status did not report selected source"
-  "$CLI" quit || true
-  pkill -x Endelito >/dev/null 2>&1 || true
-  wait_for_process_exit
 fi
 
 printf 'smoke: ok\n'
