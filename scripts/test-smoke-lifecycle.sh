@@ -35,6 +35,7 @@ for _ in $(seq 1 40); do
   [[ "$(pids)" != "$BEFORE" ]] && break
   sleep 0.1
 done
+[[ "$(pids)" != "$BEFORE" ]] || { printf 'lifecycle proof: app did not launch\n' >&2; exit 1; }
 kill -TERM "$SMOKE_PID"
 set +e
 wait "$SMOKE_PID"
