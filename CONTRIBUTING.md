@@ -43,7 +43,7 @@ make doctor
 
 ## Releases
 
-Use Conventional Commits (`feat:`, `fix:`, `docs:`, …) — they drive versions.
+Use Conventional Commits (`feat:`, `fix:`, `docs:`, …); they drive versions.
 
 Successful pushes to `main` evaluate commits after `verify` passes. The release
 job mints a short-lived `uinaf-releaser` token inside the `release` Environment,

@@ -5,12 +5,12 @@ detail in `docs/`.
 
 ## Start Here
 
-- [README](README.md) — product shape, install, CLI usage
-- [Contributing](CONTRIBUTING.md) — setup, verify, pull requests
-- [Architecture](docs/ARCHITECTURE.md) — control model, catalog, WebKit bridge
-- [Releases](docs/RELEASES.md) — Conventional Commits publish path and recovery
-- [Distribution](docs/DISTRIBUTION.md) — signing, Homebrew, GitHub policy
-- [Security](SECURITY.md) — private vulnerability reporting
+- [README](README.md): product shape, install, CLI usage
+- [Contributing](CONTRIBUTING.md): setup, verify, pull requests
+- [Architecture](docs/ARCHITECTURE.md): control model, catalog, WebKit bridge
+- [Releases](docs/RELEASES.md): Conventional Commits publish path and recovery
+- [Distribution](docs/DISTRIBUTION.md): signing, Homebrew, GitHub policy
+- [Security](SECURITY.md): private vulnerability reporting
 
 ## Hard rules
 
