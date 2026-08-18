@@ -48,9 +48,10 @@ Bridge script messages are accepted only from trusted Endel web origins
 (`play.endel.io` / `*.endel.io`).
 
 - The current default page is the Focus source.
-- Source selection is ID based and matches Endel's visible source icons.
+- Source selection is ID-based and matches Endel's visible source icons.
 - The menu bar Source submenu and `source <id-or-name>` load a known
-  soundscape route; `play <id-or-name>` loads then starts that route.
+  soundscape route without starting it.
+- `play <id-or-name>` loads that route and starts it.
 - The supported IDs are the Focus, Relax, and Sleep soundscapes listed in the
   shared catalog.
 
