@@ -89,8 +89,9 @@ writeback:
   would block signed release-version writeback to `main`.
 - Actions policy: selected actions only; allow GitHub-owned actions, verified
   actions, `actions/create-github-app-token@*`,
-  `cycjimmy/semantic-release-action@*`, and
-  `Homebrew/actions/setup-homebrew@*`.
+  `cycjimmy/semantic-release-action@*`,
+  `Homebrew/actions/setup-homebrew@*`, and reusable workflows from
+  `uinaf/.github/*`.
 - Environment: the release job uses the approval-free `release` environment,
   restricted to workflow runs from `main`.
 - GitHub writes: short-lived `uinaf-releaser` installation token
@@ -108,7 +109,9 @@ the semantic-release writeback path is redesigned first.
 ## Workflow Maintenance
 
 - Keep workflow actions pinned to full commit SHAs with same-line version
-  comments.
+  comments. One exception: the shared scan caller tracks
+  `uinaf/.github/.github/workflows/scan.yml@main` by design, so digest bumps
+  land once for every adopter; `.github/zizmor.yml` encodes that split.
 - Keep semantic-release and plugins pinned in the workflow `extra_plugins`
   block rather than adding release-only Node dependencies to the repo.
 - Keep `@semantic-release/github` at `12.0.9` or newer so Node 24 runners can
