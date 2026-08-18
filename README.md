@@ -55,7 +55,8 @@ Open the player once with `endelito show` to sign in or pick content. After that
 
 - The menu bar item includes a Source submenu with the known Focus, Relax, and Sleep soundscapes.
 - `endelito sources` lists known source IDs.
-- `endelito source <id-or-name>` loads a source without starting playback.
+- `endelito source <id-or-name>` loads a source and preserves playback state;
+  the new source starts only if playback was already running.
 - `endelito play <id-or-name>` loads a source and starts it.
 - `endelito deeplink <url>` forwards a URL into the web player's deeplink handlers.
 
