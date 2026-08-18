@@ -47,11 +47,12 @@ player. Session persistence is part of the app contract.
 Bridge script messages are accepted only from trusted Endel web origins
 (`play.endel.io` / `*.endel.io`).
 
-The current default page is the Focus source. Source selection is ID based and
-matches Endel's visible source icons. The menu bar Source submenu and
-`source <id-or-name>` load a known soundscape route, and `play <id-or-name>`
-loads then starts that route. The supported IDs are the Focus, Relax, and Sleep
-soundscapes listed in the shared catalog.
+- The current default page is the Focus source.
+- Source selection is ID based and matches Endel's visible source icons.
+- The menu bar Source submenu and `source <id-or-name>` load a known
+  soundscape route; `play <id-or-name>` loads then starts that route.
+- The supported IDs are the Focus, Relax, and Sleep soundscapes listed in the
+  shared catalog.
 
 The app injects the bundled
 [EndelitoBridge.js](../app/Resources/EndelitoBridge.js) compatibility shim for

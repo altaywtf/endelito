@@ -9,7 +9,6 @@ The shape is intentionally boring: one WebKit session, one menu bar app, one CLI
 - The Swift app is a menu bar-only `WKWebView` wrapper for `https://play.endel.io/en`.
 - WebKit uses the default website data store, so the site session persists on this Mac.
 - The Go CLI launches the app, sends `endelito://` commands, and reads a tiny local state file.
-- There are no charts, dashboards, visualizations, or background provider scans.
 - The app opens the Focus soundscape by default and can switch across 17 known Focus, Relax, and Sleep soundscapes.
 
 ## Install
@@ -52,9 +51,13 @@ endelito deeplink "https://play.endel.io/en/soundscape/focus"
 endelito quit
 ```
 
-Open the player once with `endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback. The menu bar item includes a Source submenu with the known Focus, Relax, and Sleep soundscapes. Use `endelito sources` to list known source IDs. Use `endelito source <id-or-name>` to load a source without starting playback, or `endelito play <id-or-name>` to load and start it. Use `endelito deeplink <url>` to forward a URL into the web player's deeplink handlers.
+Open the player once with `endelito show` to sign in or pick content. After that, the app can stay in the menu bar and the CLI can control playback.
 
-Sign-in persists across app restarts through WebKit's default website data store for `Endelito.app`. Rebuilding the app with the same bundle identifier keeps using the same WebKit session storage.
+- The menu bar item includes a Source submenu with the known Focus, Relax, and Sleep soundscapes.
+- `endelito sources` lists known source IDs.
+- `endelito source <id-or-name>` loads a source without starting playback.
+- `endelito play <id-or-name>` loads a source and starts it.
+- `endelito deeplink <url>` forwards a URL into the web player's deeplink handlers.
 
 ## How It Works
 
