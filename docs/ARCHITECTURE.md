@@ -96,7 +96,9 @@ Resources are bundled during `make build-app`. The WebKit bridge is copied from
 fields are stamped from the same `RELEASE_VERSION` (usually `VERSION`).
 
 `make verify` runs `node --check` and bridge contract tests before building so
-page-control JavaScript fails fast outside the app.
+page-control JavaScript fails fast outside the app. `make smoke-live` runs that
+exhaustive gate first and then reuses its exact build artifacts for the live
+launch and command proof.
 
 Generated outputs include:
 

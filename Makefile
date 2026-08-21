@@ -96,7 +96,7 @@ uninstall:
 smoke: build
 	scripts/smoke.sh
 
-smoke-live: build
+smoke-live: verify
 	ENDELITO_SMOKE_LAUNCH=1 scripts/smoke.sh
 	scripts/test-smoke-lifecycle.sh
 

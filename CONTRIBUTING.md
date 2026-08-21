@@ -3,6 +3,7 @@
 ## Requirements
 
 - macOS
+- Mise for cached local verification (optional)
 - Go 1.26 or newer
 - Node.js for bridge syntax and contract checks
 - Xcode command line tools with `swift`, `xcrun`, `iconutil`, and `codesign`
@@ -26,6 +27,13 @@ See [README](README.md) for user-facing CLI commands and [Architecture](docs/ARC
 Run these before pushing:
 
 ```sh
+mise run verify
+mise run --force verify # explicitly run the exhaustive gate
+```
+
+Without Mise, run the same exhaustive gate directly:
+
+```sh
 make verify
 ```
 
@@ -34,6 +42,9 @@ For UI changes, also launch the app and check the real state path:
 ```sh
 make smoke-live
 ```
+
+The live target runs the exhaustive gate first and reuses its app and CLI
+artifacts for the launch proof.
 
 For environment and runtime diagnostics:
 

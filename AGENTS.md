@@ -33,12 +33,17 @@ detail in `docs/`.
 ## Verification
 
 ```sh
-make verify
+mise run verify
 ```
+
+This skips unchanged sources after a successful result. Use
+`mise run --force verify` for an explicit full pass. `make verify` remains the
+exhaustive underlying repository gate.
 
 Use `make smoke-live` when a macOS GUI session is available and you need to
 prove the app launches and accepts CLI source/play/pause commands through the
-URL scheme.
+URL scheme. It runs the exhaustive gate first, then reuses those exact build
+artifacts for the live proof.
 
 Use `make doctor` for a quick local environment, build-artifact, process, and
 state-file snapshot before deeper debugging.
