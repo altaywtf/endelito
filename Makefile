@@ -16,7 +16,7 @@ APPLICATIONS_DIR ?= /Applications
 SOURCES_JSON := internal/sources/sources.json
 CODESIGN_IDENTITY ?=
 
-.PHONY: build build-cli build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge verify-go doctor run install uninstall smoke smoke-live verify clean clean-app
+.PHONY: build build-cli build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge doctor run install uninstall smoke smoke-live verify clean clean-app
 
 build: build-cli build-app
 
@@ -100,12 +100,13 @@ smoke-live: verify
 	ENDELITO_SMOKE_LAUNCH=1 scripts/smoke.sh
 	scripts/test-smoke-lifecycle.sh
 
-verify-go:
+verify:
+	$(MAKE) check-js
+	$(MAKE) test-bridge
 	gofmt -l cmd internal | awk 'NF{print; exit 1}'
 	go vet ./...
 	go test ./...
-
-verify: check-js test-bridge verify-go smoke
+	$(MAKE) smoke
 
 clean: clean-app
 	rm -rf "$(BIN_DIR)" "$(DIST_DIR)"

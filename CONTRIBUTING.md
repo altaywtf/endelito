@@ -3,7 +3,7 @@
 ## Requirements
 
 - macOS
-- Mise
+- Mise for cached local verification (optional)
 - Go 1.26 or newer
 - Node.js for bridge syntax and contract checks
 - Xcode command line tools with `swift`, `xcrun`, `iconutil`, and `codesign`
@@ -29,6 +29,12 @@ Run these before pushing:
 ```sh
 mise run verify
 mise run --force verify # explicitly run the exhaustive gate
+```
+
+Without Mise, run the same exhaustive gate directly:
+
+```sh
+make verify
 ```
 
 For UI changes, also launch the app and check the real state path:

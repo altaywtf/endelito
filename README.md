@@ -82,7 +82,8 @@ mise run --force verify # explicitly run the exhaustive gate
 The incremental command skips unchanged sources after a successful result.
 The underlying `make verify` gate syntax-checks the WebKit bridge, runs bridge
 contract tests, formats/vets Go, runs Go tests, builds the CLI and app, and
-checks the app bundle, URL scheme, icons, and CLI help.
+checks the app bundle, URL scheme, icons, and CLI help. Mise is optional; run
+`make verify` directly for an exhaustive pass without it.
 
 For a quick machine-readable environment and runtime snapshot:
 
