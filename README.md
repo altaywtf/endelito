@@ -75,10 +75,14 @@ make build
 Build outputs are written to `bin/endelito` and `build/Endelito.app`. The app bundle includes generated Finder and menu bar icons.
 
 ```sh
-make verify
+mise run verify
+mise run --force verify # explicitly run the exhaustive gate
 ```
 
-`make verify` syntax-checks the WebKit bridge, runs bridge contract tests, formats/vets Go, runs Go tests, builds the CLI and app, and checks the app bundle, URL scheme, icons, and CLI help.
+The incremental command skips unchanged sources after a successful result.
+The underlying `make verify` gate syntax-checks the WebKit bridge, runs bridge
+contract tests, formats/vets Go, runs Go tests, builds the CLI and app, and
+checks the app bundle, URL scheme, icons, and CLI help.
 
 For a quick machine-readable environment and runtime snapshot:
 

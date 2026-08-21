@@ -44,9 +44,10 @@ only after GitHub verifies the published immutable release.
 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) contains both jobs:
 
-- `verify` runs `make verify` on pushes and pull requests, except
-  `[skip ci]` release commits, then runs `make smoke-live` to exercise
-  CLI → URL scheme → app state on the macOS runner.
+- `verify` runs `make smoke-live` on pushes and pull requests, except
+  `[skip ci]` release commits. That target completes the exhaustive repository
+  gate, then reuses its exact CLI and app artifacts for the live
+  CLI → URL scheme → app state proof on the macOS runner.
 - `release` runs after `verify` on normal pushes to `main`.
 
 Both jobs run on GitHub's `macos-latest` runner.

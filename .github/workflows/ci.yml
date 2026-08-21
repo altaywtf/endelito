@@ -31,10 +31,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Verify
-        run: make verify
-
-      - name: Smoke live
+      - name: Verify and smoke live
         run: make smoke-live
 
   release:

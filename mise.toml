@@ -1,0 +1,14 @@
+[tasks.verify]
+description = "Verify changed Endelito sources"
+sources = [
+  "Makefile",
+  "VERSION",
+  "go.mod",
+  "app/**",
+  "cmd/**",
+  "internal/**",
+  "scripts/smoke.sh",
+  "scripts/test-bridge.mjs",
+  "tools/**",
+]
+run = "make verify"
