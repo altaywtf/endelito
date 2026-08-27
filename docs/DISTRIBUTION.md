@@ -5,8 +5,8 @@ Endelito publishes versioned macOS app and CLI assets through
 [uinaf Homebrew tap](https://github.com/uinaf/homebrew-tap). It does not deploy
 a running service.
 
-Channel: Developer ID–signed, Apple-notarized zip. Do not add Mac App Store
-packaging without an explicit product decision.
+Releases use Developer ID signed, Apple-notarized zip archives. Do not add Mac
+App Store packaging without an explicit product decision.
 
 ## Signed Package
 
