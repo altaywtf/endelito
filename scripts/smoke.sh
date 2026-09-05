@@ -132,7 +132,8 @@ if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
 
   send_app_command launch
   wait_for_state "initial launch state" "focus" "false"
-  "$CLI" status | grep -q '^Endelito:' || fail "status did not read app state"
+  STATUS_OUTPUT="$("$CLI" status)" || fail "status command failed: $STATUS_OUTPUT"
+  grep -q '^Endelito:' <<<"$STATUS_OUTPUT" || fail "status did not read app state: $STATUS_OUTPUT"
 
   send_app_command source relax
   wait_for_state "source command selects Relax while paused" "relax" "false"
@@ -146,7 +147,8 @@ if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
   send_app_command pause
   wait_for_state "pause command stops playback" "sleep" "false"
 
-  "$CLI" status | grep -q '^source: sleep (Sleep)$' || fail "status did not report selected source"
+  STATUS_OUTPUT="$("$CLI" status)" || fail "status command failed: $STATUS_OUTPUT"
+  grep -q '^source: sleep (Sleep)$' <<<"$STATUS_OUTPUT" || fail "status did not report selected source: $STATUS_OUTPUT"
 fi
 
 printf 'smoke: ok\n'
