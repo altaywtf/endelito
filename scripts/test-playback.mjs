@@ -63,9 +63,11 @@ final class WiringProbe {
     var pageURL: URL?
     var sourceSlug = "focus"
     var debug: [[String: Any]] = []
+    var writtenPlayback: [Bool] = []
+    var menuPlayback: [Bool] = []
     func ensurePlayerLoaded(showWindow: Bool) {}
-    func rebuildStatusMenu() {}
-    func writeState() {}
+    func rebuildStatusMenu() { menuPlayback.append(playbackState.isPlaying) }
+    func writeState() { writtenPlayback.append(playbackState.isPlaying) }
     func writeDebug(_ value: [String: Any]) { debug.append(value) }
     func sourceSlug(from: URL?) -> String? { nil }
     __METHODS__
@@ -87,6 +89,23 @@ func testPlaybackWiring() {
         precondition(view.callbacks.count == 1) // Only the explicit pause.
         precondition(!probe.playbackState.isPlaying)
     }
+    let superseded = WiringProbe()
+    let previousLoad = WKNavigation()
+    let requestedLoad = WKNavigation()
+    superseded.requestedNavigation = previousLoad
+    _ = superseded.playbackIntent.begin(play: true)
+    superseded.requestedNavigation = requestedLoad
+    superseded.webView(superseded.playerView!, didStartProvisionalNavigation: previousLoad)
+    precondition(superseded.playbackIntent.pendingPlay)
+    precondition(superseded.requestedNavigation === requestedLoad)
+    precondition(superseded.currentNavigation == nil)
+    superseded.webView(superseded.playerView!, didStartProvisionalNavigation: requestedLoad)
+    superseded.webView(superseded.playerView!, didFinish: requestedLoad)
+    DispatchQueue.main.tick()
+    precondition(superseded.playerView!.callbacks.count == 1)
+    superseded.playerView!.respond(rect)
+    precondition(superseded.playerView!.clicks == 1)
+
     let cold = WiringProbe()
     let initial = WKNavigation()
     cold.requestedNavigation = initial // ensurePlayerLoaded's initial load.
@@ -153,6 +172,9 @@ func testPlaybackWiring() {
     }
     precondition(retry.playerView!.callbacks.isEmpty)
     precondition(!retry.playbackIntent.pendingPlay)
+    precondition(!retry.playbackState.isPlaying)
+    precondition(retry.writtenPlayback.last == false)
+    precondition(retry.menuPlayback.last == false)
     precondition(retry.debug.last?["playbackError"] as? String == "no-playback-button")
     retry.sendPlaybackCommand("play")
     retry.playerView!.respond(rect)

@@ -110,13 +110,14 @@ test "$(plutil -extract LSUIElement raw -o - "$PLIST")" = "true" || fail "app is
 
 if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
   PREEXISTING_PIDS="$(pids_for_executable)"
+  [[ -z "$PREEXISTING_PIDS" ]] || fail "stop the candidate app before cold-launch smoke"
   OWNED_PIDS=""
   trap cleanup_owned EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
   rm -f "$STATE"
-  # Create a separately owned process; all command delivery uses the real CLI.
-  open -na "$APP"
+  # A non-default command must survive cold launch, before any warm-up command.
+  send_app_command source sleep
   sleep "${ENDELITO_SMOKE_CAPTURE_DELAY:-0}"
   for _ in $(seq 1 20); do
     OWNED_PIDS="$(new_pids)"
@@ -130,8 +131,7 @@ if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
     while :; do sleep 1; done
   fi
 
-  send_app_command launch
-  wait_for_state "initial launch state" "focus" "false"
+  wait_for_state "cold source command selects Sleep" "sleep" "false"
   STATUS_OUTPUT="$("$CLI" status)" || fail "status command failed: $STATUS_OUTPUT"
   grep -q '^Endelito:' <<<"$STATUS_OUTPUT" || fail "status did not read app state: $STATUS_OUTPUT"
 

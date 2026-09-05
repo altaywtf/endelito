@@ -16,7 +16,8 @@ The Swift app owns the WebKit session and player window. It is an accessory app
 1. The user runs `endelito play` (or `bin/endelito play` from a local build).
 2. The CLI opens `endelito://play` with `open -a <selected app>` (or the bundle-id
    fallback), retaining the selected target through Launch Services delivery.
-3. The app receives the URL through `NSAppleEventManager`.
+3. The app receives the URL through `NSAppleEventManager`, registered in
+   `applicationWillFinishLaunching` before initial open events are dispatched.
 4. The app updates local playback state and sends the command into the WebView.
 5. `endelito source <id-or-name>` loads `https://play.endel.io/en/soundscape/<id>`.
 6. `endelito status` reads `~/Library/Application Support/Endelito/state.json`.
@@ -73,7 +74,8 @@ The `PlaybackIntent` owner assigns tokens to explicit commands and source
 changes. Pause and unrelated document navigation invalidate queued work and
 in-flight JavaScript callbacks. Successful attempts consume intent. A missing
 button gets at most two delayed retries without reloading the page; exhaustion
-writes a recoverable error to `debug.json`. A fresh play command can retry.
+clears optimistic playback state and writes a recoverable error to `debug.json`.
+A fresh play command can retry.
 
 Native-click idempotence uses the same media/WebAudio observation as bridge
 state reporting. Unknown playback state remains actionable.

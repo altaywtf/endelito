@@ -37,15 +37,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var requestedNavigation: WKNavigation?
     private var currentNavigation: WKNavigation?
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+    func applicationWillFinishLaunching(_ notification: Notification) {
         NSAppleEventManager.shared().setEventHandler(
             self,
             andSelector: #selector(handleURL(event:replyEvent:)),
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL)
         )
+    }
 
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
         buildMainMenu()
         buildStatusItem()
         ensurePlayerLoaded(showWindow: false)
@@ -353,6 +355,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                     if self.playbackIntent.retry(generation) {
                         self.schedulePlay(after: 2, generation: generation)
                     } else {
+                        self.playbackState = PlaybackState(isPlaying: false)
+                        self.rebuildStatusMenu()
+                        self.writeState()
                         self.writeDebug(["playbackError": "no-playback-button", "recovery": "Show Player, then try play again."])
                     }
                 } else {
@@ -658,9 +663,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        // Source commands create their intent before calling load. Any other
-        // document navigation supersedes work queued for the previous page.
-        if navigation !== requestedNavigation {
+        // A superseded load can start after a newer source request was issued.
+        // Preserve that request until its own start callback arrives.
+        if let requestedNavigation {
+            guard navigation === requestedNavigation else { return }
+        } else {
             playbackIntent.cancel()
         }
         currentNavigation = navigation

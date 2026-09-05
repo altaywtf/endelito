@@ -79,7 +79,8 @@ signs/notarizes, creates the GitHub Release, and updates the Homebrew cask. See
   and retry limits without AppKit or a live WebView.
 - Go transport tests build the actual CLI and replace `open`/`pgrep` with local
   fixtures; they do not launch an app. Live smoke sends commands through the CLI
-  but its state checks do not establish audible playback or two-copy routing.
+  and starts with a cold non-default source command; stop the candidate app first.
+  Its state checks do not establish audible playback or two-copy routing.
 - The app stores CLI-readable state at `~/Library/Application Support/Endelito/state.json`.
 - `bin/endelito debug` writes page inspection data next to the state file.
 - Soundscape IDs and aliases live in `internal/sources/sources.json`; update that catalog instead of duplicating lists in Go or Swift.
