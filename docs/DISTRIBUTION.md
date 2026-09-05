@@ -122,5 +122,6 @@ the semantic-release writeback path is redesigned first.
   interrupted midway.
 - Keep immutable releases enabled. Upload and validation must finish against a
   mutable draft; the Homebrew update starts only after publication succeeds.
-- Dependabot updates GitHub Actions through `.github/dependabot.yml`. Go has no
-  third-party modules, so there is no `gomod` Dependabot ecosystem entry.
+- Renovate updates GitHub Actions and mise tools through `renovate.json`,
+  which extends the shared `uinaf/renovate-config` preset. Go has no
+  third-party modules to track.
