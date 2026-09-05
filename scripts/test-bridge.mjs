@@ -78,7 +78,10 @@ const runBridge = ({ href = "https://play.endel.io/en/soundscape/focus", button 
         }
       }
     },
-    AudioContext: function AudioContext() {},
+    AudioContext: function AudioContext() {
+      this.state = "suspended";
+      this.addEventListener = (name, callback) => { this.onStateChange = callback; };
+    },
     webkitAudioContext: undefined,
     MutationObserver: class {
       observe() {}
@@ -163,5 +166,31 @@ assert.equal(page.hasEndelito, true);
 
 assert.match(source, /btn_player_playback_control/);
 assert.match(source, /__ENDELITO_VERSION__/);
+
+const mixed = runBridge({ media: [createMedia(), createMedia({ paused: false })] });
+assert.equal(mixed.posted.find((message) => message.type === "playback").state.isPlaying, true);
+assertResult(mixed.window.__endelito.nativePlaybackClick("pause"), { ok: true, x: 30 });
+assertResult(mixed.window.__endelito.nativePlaybackClick("play"), { ok: true, skipped: "already-playing" });
+
+const webAudio = runBridge({
+  media: [createMedia({ tag: "VIDEO", muted: true, loop: true, autoplay: true })]
+});
+const audioContext = new webAudio.window.AudioContext();
+audioContext.state = "running";
+audioContext.onStateChange();
+assert.equal(webAudio.posted.at(-1).state.isPlaying, true);
+assertResult(webAudio.window.__endelito.nativePlaybackClick("play"), { ok: true, skipped: "already-playing" });
+assertResult(webAudio.window.__endelito.nativePlaybackClick("pause"), { ok: true, x: 30 });
+audioContext.state = "suspended";
+audioContext.onStateChange();
+assert.equal(webAudio.posted.at(-1).state.isPlaying, false);
+assertResult(webAudio.window.__endelito.nativePlaybackClick("pause"), { ok: true, skipped: "already-paused" });
+assertResult(webAudio.window.__endelito.nativePlaybackClick("play"), { ok: true, x: 30 });
+
+const unknown = runBridge({ media: [] });
+assert.equal(unknown.posted.some((message) => message.type === "playback"), false);
+for (const action of ["play", "pause"]) {
+  assertResult(unknown.window.__endelito.nativePlaybackClick(action), { ok: true, x: 30 });
+}
 
 console.log("test-bridge: ok");

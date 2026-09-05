@@ -68,8 +68,7 @@
   const scheduleMediaObservation = () => setTimeout(observeMedia, 0);
 
   const playbackButtonRect = (action) => {
-    const media = mediaElements()[0] || null;
-    const isPlaying = media ? media.paused === false && media.ended !== true : null;
+    const isPlaying = currentPlaybackState()?.isPlaying ?? null;
     if (action === "play" && isPlaying === true) return { ok: true, skipped: "already-playing" };
     if (action === "pause" && isPlaying === false) return { ok: true, skipped: "already-paused" };
 

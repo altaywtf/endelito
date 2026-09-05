@@ -16,7 +16,7 @@ APPLICATIONS_DIR ?= /Applications
 SOURCES_JSON := internal/sources/sources.json
 CODESIGN_IDENTITY ?=
 
-.PHONY: build build-cli build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge doctor run install uninstall smoke smoke-live verify clean clean-app
+.PHONY: build build-cli build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge test-playback doctor run install uninstall smoke smoke-live verify clean clean-app
 
 build: build-cli build-app
 
@@ -34,7 +34,7 @@ build-app:
 	cp "$(SOURCES_JSON)" "$(RESOURCES_DIR)/sources.json"
 	swift tools/GenerateAssets.swift "$(RESOURCES_DIR)"
 	iconutil -c icns "$(RESOURCES_DIR)/AppIcon.iconset" -o "$(RESOURCES_DIR)/AppIcon.icns"
-	xcrun swiftc -Osize -framework AppKit -framework WebKit -o "$(MACOS_DIR)/$(EXECUTABLE)" app/Sources/Endelito/main.swift
+	xcrun swiftc -Osize -framework AppKit -framework WebKit -o "$(MACOS_DIR)/$(EXECUTABLE)" app/Sources/Endelito/*.swift
 	codesign --force --sign - "$(APP_DIR)"
 	du -sh "$(APP_DIR)"
 
@@ -74,6 +74,9 @@ check-js:
 test-bridge:
 	node scripts/test-bridge.mjs
 
+test-playback:
+	node scripts/test-playback.mjs
+
 doctor:
 	scripts/doctor.sh
 
@@ -103,6 +106,7 @@ smoke-live: verify
 verify:
 	$(MAKE) check-js
 	$(MAKE) test-bridge
+	$(MAKE) test-playback
 	gofmt -l cmd internal | awk 'NF{print; exit 1}'
 	go vet ./...
 	go test ./...

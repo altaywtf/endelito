@@ -9,6 +9,7 @@ sources = [
   "internal/**",
   "scripts/smoke.sh",
   "scripts/test-bridge.mjs",
+  "scripts/test-playback.mjs",
   "tools/**",
 ]
 run = "make verify"

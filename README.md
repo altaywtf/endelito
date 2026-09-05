@@ -57,7 +57,11 @@ Open the player once with `endelito show` to sign in or pick content. After that
 - `endelito sources` lists known source IDs.
 - `endelito source <id-or-name>` loads a source and preserves playback state;
   the new source starts only if playback was already running.
-- `endelito play <id-or-name>` loads a source and starts it.
+- `endelito play <id-or-name>` loads a source and starts it. A later pause cancels
+  queued playback. Missing player controls are retried twice, then reported in
+  `debug.json`; show the player and retry after resolving the page state.
+- `ENDELITO_APP=/path/to/Endelito.app endelito play` selects the app for command
+  delivery, even when another copy is running. A missing override is an error.
 - `endelito deeplink <url>` forwards a URL into the web player's deeplink handlers.
 
 ## How It Works
@@ -81,7 +85,8 @@ mise run --force verify # explicitly run the exhaustive gate
 
 The incremental command skips unchanged sources after a successful result.
 The underlying `make verify` gate syntax-checks the WebKit bridge, runs bridge
-contract tests, formats/vets Go, runs Go tests, builds the CLI and app, and
+contract tests and deterministic Swift playback-intent tests, formats/vets Go,
+runs Go tests, builds the CLI and app, and
 checks the app bundle, URL scheme, icons, and CLI help. Mise is optional; run
 `make verify` directly for an exhaustive pass without it.
 

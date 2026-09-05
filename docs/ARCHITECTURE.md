@@ -14,8 +14,10 @@ The Swift app owns the WebKit session and player window. It is an accessory app
 ## Control Flow
 
 1. The user runs `endelito play` (or `bin/endelito play` from a local build).
-2. The CLI opens `endelito://play`.
-3. The app receives the URL through `NSAppleEventManager`.
+2. The CLI opens `endelito://play` with `open -a <selected app>` (or the bundle-id
+   fallback), retaining the selected target through Launch Services delivery.
+3. The app receives the URL through `NSAppleEventManager`, registered in
+   `applicationWillFinishLaunching` before initial open events are dispatched.
 4. The app updates local playback state and sends the command into the WebView.
 5. `endelito source <id-or-name>` loads `https://play.endel.io/en/soundscape/<id>`.
 6. `endelito status` reads `~/Library/Application Support/Endelito/state.json`.
@@ -30,6 +32,10 @@ The CLI looks for `Endelito.app` in this order:
 3. `/Applications/Endelito.app`
 4. `~/Applications/Endelito.app`
 5. Launch Services bundle id `local.endelito`
+
+Discovery is performed for every command; a running copy does not bypass an
+explicit target. A missing `ENDELITO_APP` fails instead of using another copy.
+A successful `open` exit confirms transport acceptance, not playback.
 
 `make install` copies the built app into `/Applications` and the CLI into
 `$(PREFIX)/bin` (default Homebrew prefix when present, otherwise `/usr/local`).
@@ -64,6 +70,16 @@ controllable media playback and WebAudio context state so the CLI state can
 follow page-driven or system-driven changes such as AirPlay pausing playback.
 Decorative muted looping videos are ignored.
 
+The `PlaybackIntent` owner assigns tokens to explicit commands and source
+changes. Pause and unrelated document navigation invalidate queued work and
+in-flight JavaScript callbacks. Successful attempts consume intent. A missing
+button gets at most two delayed retries without reloading the page; exhaustion
+clears optimistic playback state and writes a recoverable error to `debug.json`.
+A fresh play command can retry.
+
+Native-click idempotence uses the same media/WebAudio observation as bridge
+state reporting. Unknown playback state remains actionable.
+
 Playback targets the player button inside the WebView. The app intentionally
 avoids Accessibility permissions and system-wide input events.
 
@@ -95,7 +111,8 @@ Resources are bundled during `make build-app`. The WebKit bridge is copied from
 [GenerateAssets.swift](../tools/GenerateAssets.swift). `Info.plist` version
 fields are stamped from the same `RELEASE_VERSION` (usually `VERSION`).
 
-`make verify` runs `node --check` and bridge contract tests before building so
+`make verify` runs `node --check`, bridge contract tests, and compiled Swift
+intent tests before building so
 page-control JavaScript fails fast outside the app. `make smoke-live` runs that
 exhaustive gate first and then reuses its exact build artifacts for the live
 launch and command proof.
