@@ -50,7 +50,8 @@ only after GitHub verifies the published immutable release.
   CLI → URL scheme → app state proof on the macOS runner.
 - `release` runs after `verify` on normal pushes to `main`.
 
-Both jobs run on GitHub's `macos-latest` runner.
+Both jobs run on standard GitHub-hosted `macos-26` runners (ARM64). The
+separate `update-homebrew-tap` job uses `ubuntu-24.04` (x64).
 
 Semantic-release reads Conventional Commits on `main`. When a release is
 warranted, it:

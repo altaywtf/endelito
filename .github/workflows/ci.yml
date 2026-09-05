@@ -14,7 +14,7 @@ env:
 jobs:
   verify:
     if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
-    runs-on: blacksmith-6vcpu-macos-latest
+    runs-on: macos-26
     timeout-minutes: 15
     concurrency:
       group: verify-${{ github.workflow }}-${{ github.ref }}
@@ -37,7 +37,7 @@ jobs:
   release:
     needs: [verify]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]') }}
-    runs-on: blacksmith-6vcpu-macos-latest
+    runs-on: macos-26
     timeout-minutes: 105
     environment:
       name: release
@@ -211,7 +211,7 @@ jobs:
   update-homebrew-tap:
     if: needs.release.outputs.release_ready == 'true'
     needs: [release]
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
       name: release
