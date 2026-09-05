@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"endelito/internal/sources"
 )
@@ -116,33 +115,19 @@ func printSources() {
 }
 
 func sendCommand(command string) error {
-	wasRunning := isAppRunning()
-	if err := launchApp(); err != nil {
-		return err
-	}
-
-	if !wasRunning {
-		time.Sleep(150 * time.Millisecond)
-	}
-	return open(appScheme + "://" + command)
-}
-
-func launchApp() error {
-	if isAppRunning() {
-		return nil
-	}
-
+	commandURL := appScheme + "://" + command
 	for _, appPath := range candidateAppPaths() {
 		if pathExists(appPath) {
-			return openAppBundle(appPath)
+			return open("-a", appPath, commandURL)
 		}
 	}
-
-	if err := open("-b", appBundleID); err != nil {
-		return fmt.Errorf("%s is not installed; run: make install (%w)", appName, err)
+	if appPath := os.Getenv("ENDELITO_APP"); appPath != "" {
+		return fmt.Errorf("ENDELITO_APP does not exist: %s", appPath)
 	}
-
-	return waitForAppRunning()
+	if err := open("-b", appBundleID, commandURL); err != nil {
+		return fmt.Errorf("%s could not accept the command; run: make install (%w)", appName, err)
+	}
+	return nil
 }
 
 func candidateAppPaths() []string {
@@ -173,29 +158,6 @@ func localAppPath() (string, error) {
 func pathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-func openAppBundle(appPath string) error {
-	if err := open(appPath); err != nil {
-		return err
-	}
-
-	return waitForAppRunning()
-}
-
-func isAppRunning() bool {
-	return exec.Command("pgrep", "-x", appName).Run() == nil
-}
-
-func waitForAppRunning() error {
-	for range 20 {
-		if isAppRunning() {
-			return nil
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	return fmt.Errorf("%s did not start", appName)
 }
 
 func printStatus() error {

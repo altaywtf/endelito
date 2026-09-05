@@ -88,7 +88,7 @@ NODE
 }
 
 send_app_command() {
-  open -a "$APP" "endelito://$1"
+  ENDELITO_APP="$APP" "$CLI" "$@"
 }
 
 test -x "$CLI" || fail "missing CLI at $CLI"
@@ -115,7 +115,8 @@ if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
   trap 'exit 130' INT
   trap 'exit 143' TERM
   rm -f "$STATE"
-  open -na "$APP" "endelito://launch"
+  # Create a separately owned process; all command delivery uses the real CLI.
+  open -na "$APP"
   sleep "${ENDELITO_SMOKE_CAPTURE_DELAY:-0}"
   for _ in $(seq 1 20); do
     OWNED_PIDS="$(new_pids)"
@@ -129,16 +130,17 @@ if [[ "${ENDELITO_SMOKE_LAUNCH:-0}" == "1" ]]; then
     while :; do sleep 1; done
   fi
 
+  send_app_command launch
   wait_for_state "initial launch state" "focus" "false"
   "$CLI" status | grep -q '^Endelito:' || fail "status did not read app state"
 
-  send_app_command "source?slug=relax"
+  send_app_command source relax
   wait_for_state "source command selects Relax while paused" "relax" "false"
 
-  send_app_command "play?source=focus"
+  send_app_command play focus
   wait_for_state "play command selects Focus" "focus" "*"
 
-  send_app_command "source?slug=sleep"
+  send_app_command source sleep
   wait_for_state "source command selects Sleep" "sleep" "*"
 
   send_app_command pause

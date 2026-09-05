@@ -33,9 +33,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var playbackState = PlaybackState(isPlaying: false)
     private var sourceSlug = defaultSourceSlug
     private var pageURL: URL?
-    private var playAfterNavigation = false
-    private var navigationGeneration = 0
-    private var pendingPlayGeneration: Int?
+    private var playbackIntent = PlaybackIntent()
+    private var requestedNavigation: WKNavigation?
+    private var currentNavigation: WKNavigation?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -84,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         case "quit":
             NSApp.terminate(nil)
         case "reload":
-            playerView?.reload()
+            reload(nil)
         case "debug":
             debugPage()
         case "play":
@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             NSApp.activate(ignoringOtherApps: true)
         }
 
-        webView.load(URLRequest(url: sourceURL(sourceSlug)))
+        requestedNavigation = webView.load(URLRequest(url: sourceURL(sourceSlug)))
 
         self.playerView = webView
         self.window = window
@@ -235,7 +235,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     @objc private func reload(_ sender: Any?) {
         ensurePlayerLoaded(showWindow: false)
-        playerView?.reload()
+        playbackIntent.cancel()
+        requestedNavigation = playerView?.reload()
     }
 
     @objc private func togglePlayback(_ sender: Any?) {
@@ -288,6 +289,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     private func sendPlaybackCommand(_ action: String) {
         ensurePlayerLoaded(showWindow: false)
+        let generation = playbackIntent.begin(play: action == "play")
         switch action {
         case "play":
             playbackState = PlaybackState(isPlaying: true)
@@ -301,8 +303,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         rebuildStatusMenu()
         writeState()
 
+        if action == "play", playerView?.isLoading == true { return }
         if action == "play" || action == "pause" || action == "toggle" {
-            clickPlaybackButton(action)
+            if action != "play" || playbackIntent.startAttempt(generation) {
+                clickPlaybackButton(action, generation: generation)
+            }
             return
         }
     }
@@ -314,32 +319,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         }
 
         ensurePlayerLoaded(showWindow: false)
-        navigationGeneration += 1
-        let generation = navigationGeneration
+        _ = playbackIntent.begin(play: playAfterLoad)
         sourceSlug = source
-        playAfterNavigation = playAfterLoad
-        pendingPlayGeneration = playAfterLoad ? generation : nil
         playbackState = PlaybackState(isPlaying: playAfterLoad)
         rebuildStatusMenu()
         writeState()
-        playerView?.load(URLRequest(url: sourceURL(source)))
+        requestedNavigation = playerView?.load(URLRequest(url: sourceURL(source)))
     }
 
     private func schedulePlay(after delay: TimeInterval, generation: Int) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            guard self.pendingPlayGeneration == generation,
-                  self.navigationGeneration == generation
-            else {
-                return
-            }
-            self.sendPlaybackCommand("play")
+            guard self.playbackIntent.startAttempt(generation) else { return }
+            self.clickPlaybackButton("play", generation: generation)
         }
     }
 
-    private func clickPlaybackButton(_ action: String) {
-        let generation = navigationGeneration
+    private func clickPlaybackButton(_ action: String, generation: Int) {
         playerView?.evaluateJavaScript("__endelito.nativePlaybackClick(\(jsonString(action)))") { result, error in
+            guard self.playbackIntent.isCurrent(generation) else { return }
             if let error {
+                self.playbackIntent.finish(generation)
                 self.writeDebug(["nativeClickError": String(describing: error)])
                 return
             }
@@ -351,16 +350,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                 if action == "play",
                    let result = result as? [String: Any],
                    result["reason"] as? String == "no-playback-button" {
-                    guard self.navigationGeneration == generation else {
-                        return
+                    if self.playbackIntent.retry(generation) {
+                        self.schedulePlay(after: 2, generation: generation)
+                    } else {
+                        self.writeDebug(["playbackError": "no-playback-button", "recovery": "Show Player, then try play again."])
                     }
-                    self.playerView?.load(URLRequest(url: self.sourceURL(self.sourceSlug)))
-                    self.pendingPlayGeneration = generation
-                    self.schedulePlay(after: 2, generation: generation)
+                } else {
+                    self.playbackIntent.finish(generation)
                 }
                 return
             }
 
+            self.playbackIntent.finish(generation)
             if rect["skipped"] != nil {
                 self.writeDebug(["webViewClick": rect])
                 return
@@ -370,7 +371,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                   let y = rect["y"] as? Double,
                   let webView = self.playerView
             else {
-                self.writeDebug(["nativeClickResult": result])
+                self.writeDebug(["nativeClickResult": result ?? "nil"])
                 return
             }
 
@@ -589,13 +590,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                let normalizedSource = normalizedSourceSlug(source),
                normalizedSource != sourceSlug {
                 let shouldResume = playbackState.isPlaying || body["wasPlaying"] as? Bool == true
-                navigationGeneration += 1
-                let generation = navigationGeneration
+                let generation = playbackIntent.begin(play: shouldResume)
                 sourceSlug = normalizedSource
                 rebuildStatusMenu()
                 writeState()
                 if shouldResume {
-                    pendingPlayGeneration = generation
                     schedulePlay(after: 1, generation: generation)
                 }
             }
@@ -644,6 +643,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         _ webView: WKWebView,
         didFinish navigation: WKNavigation!
     ) {
+        guard navigation === currentNavigation, requestedNavigation == nil else { return }
         pageURL = webView.url
         if let source = sourceSlug(from: webView.url) {
             sourceSlug = source
@@ -652,11 +652,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         rebuildStatusMenu()
         writeState()
 
-        if playAfterNavigation {
-            playAfterNavigation = false
-            let generation = pendingPlayGeneration ?? navigationGeneration
-            schedulePlay(after: 1, generation: generation)
+        if playbackIntent.pendingPlay {
+            schedulePlay(after: 1, generation: playbackIntent.generation)
         }
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        // Source commands create their intent before calling load. Any other
+        // document navigation supersedes work queued for the previous page.
+        if navigation !== requestedNavigation {
+            playbackIntent.cancel()
+        }
+        currentNavigation = navigation
+        requestedNavigation = nil
     }
 
     func webView(

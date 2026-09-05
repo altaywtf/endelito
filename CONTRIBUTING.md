@@ -71,7 +71,15 @@ signs/notarizes, creates the GitHub Release, and updates the Homebrew cask. See
 
 ## Development Notes
 
-- `ENDELITO_APP=/path/to/Endelito.app endelito launch` overrides the app path the CLI opens.
+- `ENDELITO_APP=/path/to/Endelito.app endelito launch` selects the app for every
+  command, including when another copy is running. Missing overrides fail.
+- `make test-playback` compiles the production intent owner and extracted
+  AppDelegate command, timer, click-callback, and navigation methods. Deterministic
+  fixtures cover cancellation, stale callbacks, duplicate attempts, cold playback,
+  and retry limits without AppKit or a live WebView.
+- Go transport tests build the actual CLI and replace `open`/`pgrep` with local
+  fixtures; they do not launch an app. Live smoke sends commands through the CLI
+  but its state checks do not establish audible playback or two-copy routing.
 - The app stores CLI-readable state at `~/Library/Application Support/Endelito/state.json`.
 - `bin/endelito debug` writes page inspection data next to the state file.
 - Soundscape IDs and aliases live in `internal/sources/sources.json`; update that catalog instead of duplicating lists in Go or Swift.
