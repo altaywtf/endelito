@@ -47,3 +47,7 @@ artifacts for the live proof.
 
 Use `make doctor` for a quick local environment, build-artifact, process, and
 state-file snapshot before deeper debugging.
+
+## Repository skills
+
+- Use [Swift concurrency](.agents/skills/swift-concurrency/SKILL.md) for tasks, actor isolation, Sendable, and callback-to-async changes.
