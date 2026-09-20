@@ -11,6 +11,7 @@ VERSION_FILE := VERSION
 RELEASE_VERSION ?= $(shell if test -f "$(VERSION_FILE)"; then tr -d '[:space:]' < "$(VERSION_FILE)"; else printf dev; fi)
 ARCH := $(shell uname -m)
 APPLICATIONS_DIR ?= /Applications
+PREFIX ?= $(shell if command -v brew >/dev/null 2>&1; then brew --prefix; elif test -d /opt/homebrew/bin; then printf /opt/homebrew; else printf /usr/local; fi)
 SOURCES_JSON := app/Resources/sources.json
 CODESIGN_IDENTITY ?=
 
@@ -78,6 +79,7 @@ install: build
 
 uninstall:
 	rm -rf "$(APPLICATIONS_DIR)/$(APP_NAME).app"
+	rm -f "$(PREFIX)/bin/endelito"
 	@printf 'uninstall: removed %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app"
 
 smoke: build

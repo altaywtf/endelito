@@ -58,3 +58,6 @@ verification, and follow the repository template. Report vulnerabilities through
 
 Pushes to `main` evaluate a signed, notarized release after verification passes.
 See [Releases](docs/RELEASES.md) for credentials and recovery.
+
+`make uninstall` also removes the legacy CLI from `PREFIX/bin` (the Homebrew
+prefix by default). Set `PREFIX` if the old CLI was installed elsewhere.

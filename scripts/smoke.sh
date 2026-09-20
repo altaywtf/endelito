@@ -24,6 +24,6 @@ test "$(plutil -extract CFBundleIdentifier raw -o - "$PLIST")" = "local.endelito
 test "$(plutil -extract CFBundleName raw -o - "$PLIST")" = "Endelito" || fail "unexpected bundle name"
 test "$(plutil -extract LSUIElement raw -o - "$PLIST")" = "true" || fail "app is not menu-bar-only"
 
-codesign --verify --strict "$APP"
+codesign --verify --deep --strict "$APP"
 
 printf 'smoke: ok\n'
