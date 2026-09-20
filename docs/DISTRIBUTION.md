@@ -5,7 +5,7 @@ Endelito publishes its macOS app through
 GitHub ownership is independent of the Apple Developer team: releases retain
 Developer ID signing and notarization by undefined is not a function LLC.
 
-The `uinaf-releaser` GitHub App must be installed for `altaywtf/endelito`.
+The `uinaf-ci` GitHub App must be installed for `altaywtf/endelito`.
 The workflow scopes its installation token to the repository owner and this
 repository only. The Apple certificate, notarization key, and Developer team
 remain unchanged by the GitHub transfer.
@@ -43,9 +43,9 @@ writeback:
 - Ruleset `default-branch-baseline` on the default branch: block deletion and
   non-fast-forward updates; require signed commits without a release App bypass.
 - Ruleset `protect-release-tags` on `refs/tags/v*`: block tag deletion and
-  updates; require signed tags. `uinaf-releaser` may bypass.
+  updates; require signed tags. `uinaf-ci` may bypass.
 - Required verification and scan checks use a separate non-strict ruleset.
-  Admins and `uinaf-releaser` bypass only this check rule, preserving signed
+  Admins and `uinaf-ci` bypass only this check rule, preserving signed
   release-version writeback. Renovate has no bypass.
 - Actions policy: selected actions only; allow GitHub-owned actions, verified
   actions, `actions/create-github-app-token@*`,
@@ -54,7 +54,7 @@ writeback:
   `uinaf/.github/*`.
 - Environment: the release job uses the approval-free `release` environment,
   restricted to workflow runs from `main`.
-- GitHub writes: short-lived `uinaf-releaser` installation token
+- GitHub writes: short-lived `uinaf-ci` installation token
   (`UINAF_RELEASE_APP_CLIENT_ID` + `UINAF_RELEASE_APP_PRIVATE_KEY`) scoped to
   `endelito`.
 - Signing secrets: `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64`,

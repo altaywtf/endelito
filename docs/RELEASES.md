@@ -19,7 +19,7 @@ Conventional Commits drive the bump:
 
 1. `verify` runs with read-only credentials
 2. Protected `release` Environment imports Apple signing assets, then mints a
-   short-lived `uinaf-releaser` installation token scoped to `endelito`
+   short-lived `uinaf-ci` installation token scoped to `endelito`
 3. `semantic-release` commits `VERSION` through GitHub's signed App commit API,
    signs/notarizes from that commit, then creates the version tag and a mutable
    draft GitHub Release containing the notarized zip; exact-tag lookup fails if
@@ -47,14 +47,14 @@ Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Di
 
 Pre-merge (release Environment):
 
-- [ ] `uinaf-releaser` is installed for `altaywtf/endelito`
+- [ ] `uinaf-ci` is installed for `altaywtf/endelito`
 
 - [ ] `UINAF_RELEASE_APP_CLIENT_ID` is set
 - [ ] `UINAF_RELEASE_APP_PRIVATE_KEY` is set
 
 Post-merge (first real release after credential or workflow changes):
 
-- [ ] Release commit / GitHub Release is attributed to `uinaf-releaser[bot]`
+- [ ] Release commit / GitHub Release is attributed to `uinaf-ci[bot]`
 
 ## Recover a stuck publish
 
