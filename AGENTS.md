@@ -10,7 +10,7 @@ detail in `docs/`.
 - [Architecture](docs/ARCHITECTURE.md): control model, catalog, WebKit bridge
 - [Releases](docs/RELEASES.md): Conventional Commits publish path and recovery
 - [Distribution](docs/DISTRIBUTION.md): signing and GitHub policy
-- [Security](SECURITY.md): private vulnerability reporting
+- [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md): private vulnerability reporting
 
 ## Hard rules
 

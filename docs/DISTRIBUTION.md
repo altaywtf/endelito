@@ -80,4 +80,4 @@ path working when changing repository rules.
 - Keep immutable releases enabled. Upload and validation must finish against a
   mutable draft before publication.
 - Renovate updates GitHub Actions and mise tools through `renovate.json`,
-  which extends the shared `uinaf/renovate-config` preset.
+  which extends the shared `altaywtf/.github:renovate-config` preset.

@@ -45,6 +45,6 @@ Menu interactions and audible playback need a GUI session; see
 - [Architecture](docs/ARCHITECTURE.md)
 - [Releases](docs/RELEASES.md)
 - [Distribution and signing](docs/DISTRIBUTION.md)
-- [Security](SECURITY.md)
+- [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md)
 
 [MIT License](LICENSE).

@@ -40,6 +40,19 @@ Run one copy at a time: builds share the `local.endelito` bundle identifier,
 WebKit storage, and diagnostics. Automated checks do not establish audible
 playback or website authentication. Use `make doctor` for local diagnostics.
 
+## Issues and product boundaries
+
+Keep feature requests within the menu bar WebKit player scope. Bug reports
+should include macOS version, Mac architecture, install method, app version,
+and sanitized `make doctor` output. Remove credentials, cookies, account
+details, and private page content before sharing diagnostics.
+
+WebKit session data and files under `~/Library/Application Support/Endelito/`
+are sensitive. Keep debug output local and out of git. Adding Accessibility,
+global input monitoring, screen recording, key logging, system-wide event
+posting, network services, or remote control endpoints requires an explicit
+security review and approval.
+
 ## Development notes
 
 - [sources.json](app/Resources/sources.json) owns soundscape IDs and aliases.
@@ -54,7 +67,7 @@ playback or website authentication. Use `make doctor` for local diagnostics.
 
 Use Conventional Commits. Focus pull requests on one change, include relevant
 verification, and follow the repository template. Report vulnerabilities through
-[Security](SECURITY.md).
+[Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md).
 
 Pushes to `main` evaluate a signed, notarized release after verification passes.
 See [Releases](docs/RELEASES.md) for credentials and recovery.
