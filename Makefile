@@ -93,7 +93,7 @@ verify:
 	$(MAKE) smoke
 
 clean: clean-app
-	rm -rf "$(DIST_DIR)"
+	rm -rf bin "$(DIST_DIR)"
 
 clean-app:
 	rm -rf "$(APP_DIR)"
