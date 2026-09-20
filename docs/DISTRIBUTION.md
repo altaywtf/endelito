@@ -47,11 +47,7 @@ writeback:
 - Required verification and scan checks use a separate non-strict ruleset.
   Admins and `uinaf-ci` bypass only this check rule, preserving signed
   release-version writeback. Renovate has no bypass.
-- Actions policy: selected actions only; allow GitHub-owned actions, verified
-  actions, `actions/create-github-app-token@*`,
-  `cycjimmy/semantic-release-action@*`,
-  and reusable workflows from
-  `uinaf/.github/*`.
+- Actions policy: all actions are allowed; full commit SHA pins are enforced.
 - Environment: the release job uses the approval-free `release` environment,
   restricted to workflow runs from `main`.
 - GitHub writes: short-lived `uinaf-ci` installation token
@@ -67,10 +63,9 @@ path working when changing repository rules.
 
 ## Workflow Maintenance
 
-- Keep workflow actions pinned to full commit SHAs with same-line version
-  comments. One exception: the shared scan caller tracks
-  `uinaf/.github/.github/workflows/scan.yml@main` by design, so digest bumps
-  land once for every adopter; `.github/zizmor.yml` encodes that split.
+- Keep workflow actions and the shared scan caller pinned to full commit SHAs
+  with same-line version comments. The personal Renovate preset updates
+  `uinaf/.github` pins along with other Actions dependencies.
 - Keep semantic-release and plugins pinned in the workflow `extra_plugins`
   block rather than adding release-only Node dependencies to the repo.
 - Keep `@semantic-release/github` at `12.0.9` or newer so Node 24 runners can
