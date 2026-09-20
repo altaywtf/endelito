@@ -35,8 +35,8 @@ Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Di
 
 | Name | Kind |
 |---|---|
-| `UINAF_RELEASE_APP_CLIENT_ID` | variable |
-| `UINAF_RELEASE_APP_PRIVATE_KEY` | secret |
+| `UINAF_CI_APP_CLIENT_ID` | variable |
+| `UINAF_CI_APP_PRIVATE_KEY` | secret |
 | `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64` | secret |
 | `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD` | secret |
 | `APPLE_NOTARY_API_KEY_P8` | secret |
@@ -49,8 +49,8 @@ Pre-merge (release Environment):
 
 - [ ] `uinaf-ci` is installed for `altaywtf/endelito`
 
-- [ ] `UINAF_RELEASE_APP_CLIENT_ID` is set
-- [ ] `UINAF_RELEASE_APP_PRIVATE_KEY` is set
+- [ ] `UINAF_CI_APP_CLIENT_ID` is set
+- [ ] `UINAF_CI_APP_PRIVATE_KEY` is set
 
 Post-merge (first real release after credential or workflow changes):
 

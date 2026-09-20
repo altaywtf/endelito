@@ -55,7 +55,7 @@ writeback:
 - Environment: the release job uses the approval-free `release` environment,
   restricted to workflow runs from `main`.
 - GitHub writes: short-lived `uinaf-ci` installation token
-  (`UINAF_RELEASE_APP_CLIENT_ID` + `UINAF_RELEASE_APP_PRIVATE_KEY`) scoped to
+  (`UINAF_CI_APP_CLIENT_ID` + `UINAF_CI_APP_PRIVATE_KEY`) scoped to
   `endelito`.
 - Signing secrets: `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64`,
   `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD`, and `APPLE_NOTARY_API_KEY_P8`.
