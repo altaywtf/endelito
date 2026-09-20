@@ -64,8 +64,8 @@ path working when changing repository rules.
 ## Workflow Maintenance
 
 - Keep workflow actions and the shared scan caller pinned to full commit SHAs
-  with same-line version comments. The personal Renovate preset updates
-  `uinaf/.github` pins along with other Actions dependencies.
+  with same-line version comments. The [personal Renovate preset](https://github.com/altaywtf/.github/blob/main/renovate-config.json)
+  updates `uinaf/.github` pins along with other Actions dependencies.
 - Keep semantic-release and plugins pinned in the workflow `extra_plugins`
   block rather than adding release-only Node dependencies to the repo.
 - Keep `@semantic-release/github` at `12.0.9` or newer so Node 24 runners can
