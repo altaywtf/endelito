@@ -1,7 +1,6 @@
 APP_NAME := Endelito
 EXECUTABLE := Endelito
 BUILD_DIR := build
-BIN_DIR := bin
 APP_DIR := $(BUILD_DIR)/$(APP_NAME).app
 CONTENTS_DIR := $(APP_DIR)/Contents
 MACOS_DIR := $(CONTENTS_DIR)/MacOS
@@ -11,19 +10,13 @@ PACKAGE_DIR := $(DIST_DIR)/$(APP_NAME)
 VERSION_FILE := VERSION
 RELEASE_VERSION ?= $(shell if test -f "$(VERSION_FILE)"; then tr -d '[:space:]' < "$(VERSION_FILE)"; else printf dev; fi)
 ARCH := $(shell uname -m)
-PREFIX ?= $(shell if command -v brew >/dev/null 2>&1; then brew --prefix; elif test -d /opt/homebrew/bin; then printf /opt/homebrew; else printf /usr/local; fi)
 APPLICATIONS_DIR ?= /Applications
-SOURCES_JSON := internal/sources/sources.json
+SOURCES_JSON := app/Resources/sources.json
 CODESIGN_IDENTITY ?=
 
-.PHONY: build build-cli build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge test-playback doctor run install uninstall smoke smoke-live verify clean clean-app
+.PHONY: build build-app sign-release verify-release-signatures package-release notarize-release check-js test-bridge test-playback doctor run install uninstall smoke verify clean clean-app
 
-build: build-cli build-app
-
-build-cli:
-	mkdir -p "$(BIN_DIR)"
-	go build -trimpath -ldflags="-s -w -X main.version=$(RELEASE_VERSION)" -o "$(BIN_DIR)/endelito" ./cmd/endelito
-	du -sh "$(BIN_DIR)/endelito"
+build: build-app
 
 build-app:
 	mkdir -p "$(MACOS_DIR)" "$(RESOURCES_DIR)"
@@ -40,16 +33,12 @@ build-app:
 
 sign-release:
 	@test -n "$(CODESIGN_IDENTITY)" || { printf 'sign-release: CODESIGN_IDENTITY is required\n' >&2; exit 1; }
-	codesign --force --options runtime --timestamp --sign "$(CODESIGN_IDENTITY)" "$(BIN_DIR)/endelito"
 	codesign --force --options runtime --timestamp --sign "$(CODESIGN_IDENTITY)" "$(APP_DIR)"
 	$(MAKE) verify-release-signatures
 
 verify-release-signatures:
-	codesign --verify --strict --verbose=2 "$(BIN_DIR)/endelito"
 	codesign --verify --deep --strict --verbose=2 "$(APP_DIR)"
-	@codesign -d --verbose=4 "$(BIN_DIR)/endelito" 2>&1 | grep -q 'Authority=Developer ID Application:'
 	@codesign -d --verbose=4 "$(APP_DIR)" 2>&1 | grep -q 'Authority=Developer ID Application:'
-	@codesign -d --verbose=4 "$(BIN_DIR)/endelito" 2>&1 | grep -q 'runtime'
 	@codesign -d --verbose=4 "$(APP_DIR)" 2>&1 | grep -q 'runtime'
 
 package-release:
@@ -60,7 +49,6 @@ package-release:
 	rm -rf "$(DIST_DIR)"
 	mkdir -p "$(PACKAGE_DIR)"
 	cp -R "$(APP_DIR)" "$(PACKAGE_DIR)/"
-	cp "$(BIN_DIR)/endelito" "$(PACKAGE_DIR)/"
 	cp "$(VERSION_FILE)" "$(PACKAGE_DIR)/"
 	cp README.md LICENSE "$(PACKAGE_DIR)/"
 	(cd "$(DIST_DIR)" && ditto -c -k --sequesterRsrc --keepParent "$(APP_NAME)" "endelito-$(RELEASE_VERSION)-macos-$(ARCH).zip")
@@ -81,39 +69,29 @@ doctor:
 	scripts/doctor.sh
 
 run: build
-	"$(BIN_DIR)/endelito" launch
+	open "$(APP_DIR)"
 
 install: build
 	ditto --rsrc --extattr "$(APP_DIR)" "$(APPLICATIONS_DIR)/$(APP_NAME).app"
-	mkdir -p "$(PREFIX)/bin"
-	install -m 755 "$(BIN_DIR)/endelito" "$(PREFIX)/bin/endelito"
 	@printf 'install: %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app"
-	@printf 'install: %s\n' "$(PREFIX)/bin/endelito"
 	@printf 'install: open the app once from Applications if Launch Services has not registered it yet\n'
 
 uninstall:
 	rm -rf "$(APPLICATIONS_DIR)/$(APP_NAME).app"
-	rm -f "$(PREFIX)/bin/endelito"
-	@printf 'uninstall: removed %s and %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app" "$(PREFIX)/bin/endelito"
+	@printf 'uninstall: removed %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app"
 
 smoke: build
 	scripts/smoke.sh
-
-smoke-live: verify
-	ENDELITO_SMOKE_LAUNCH=1 scripts/smoke.sh
-	scripts/test-smoke-lifecycle.sh
 
 verify:
 	$(MAKE) check-js
 	$(MAKE) test-bridge
 	$(MAKE) test-playback
-	gofmt -l cmd internal | awk 'NF{print; exit 1}'
-	go vet ./...
-	go test ./...
+	node scripts/test-catalog.mjs
 	$(MAKE) smoke
 
 clean: clean-app
-	rm -rf "$(BIN_DIR)" "$(DIST_DIR)"
+	rm -rf "$(DIST_DIR)"
 
 clean-app:
 	rm -rf "$(APP_DIR)"

@@ -5,27 +5,27 @@ detail in `docs/`.
 
 ## Start Here
 
-- [README](README.md): product shape, install, CLI usage
+- [README](README.md): product shape and installation
 - [Contributing](CONTRIBUTING.md): setup, verify, pull requests
 - [Architecture](docs/ARCHITECTURE.md): control model, catalog, WebKit bridge
 - [Releases](docs/RELEASES.md): Conventional Commits publish path and recovery
-- [Distribution](docs/DISTRIBUTION.md): signing, Homebrew, GitHub policy
+- [Distribution](docs/DISTRIBUTION.md): signing and GitHub policy
 - [Security](SECURITY.md): private vulnerability reporting
 
 ## Hard rules
 
-- Stay a menu bar WebKit player plus CLI; do not expand into a full desktop
+- Stay a menu bar WebKit player; do not expand into a full desktop
   clone.
 - Do not add Accessibility, global input monitoring, or system-wide event
   posting without an explicit design decision and user approval.
 - Keep the player on `WKWebsiteDataStore.default()` so website login/session
   data persists across app restarts.
-- Keep generated build outputs out of git (`bin/`, `build/`, generated app
+- Keep generated build outputs out of git (`build/`, generated app
   resources).
 - Keep substantial page JavaScript in
   [EndelitoBridge.js](app/Resources/EndelitoBridge.js), not Swift string
   literals.
-- When changing commands, URL schemes, bundle IDs, state paths, or build
+- When changing menu controls, bundle IDs, state paths, or build
   targets, update README, Contributing, and Architecture in the same change.
 - When changing signing, notarization, release credentials, workflow pins, or
   GitHub release policy, update Releases and Distribution in the same change.
@@ -40,10 +40,8 @@ This skips unchanged sources after a successful result. Use
 `mise run --force verify` for an explicit full pass. `make verify` remains the
 exhaustive underlying repository gate.
 
-Use `make smoke-live` when a macOS GUI session is available and you need to
-prove the app launches and accepts CLI source/play/pause commands through the
-URL scheme. It runs the exhaustive gate first, then reuses those exact build
-artifacts for the live proof.
+For UI changes, follow [the native menu checks](CONTRIBUTING.md#validate).
+Run one app copy at a time; checkouts share its bundle ID and website storage.
 
 Use `make doctor` for a quick local environment, build-artifact, process, and
 state-file snapshot before deeper debugging.

@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible incorrect behavior in the app or CLI.
+description: Report reproducible incorrect behavior in the app.
 title: "bug: "
 labels:
   - bug
@@ -32,7 +32,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Include macOS version, Mac architecture, install method, and `endelito --version` output.
+      description: Include macOS version, Mac architecture, install method, and app version.
     validations:
       required: true
   - type: textarea

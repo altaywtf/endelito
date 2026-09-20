@@ -1,80 +1,37 @@
 # Distribution
 
-Endelito publishes versioned macOS app and CLI assets through
-[GitHub Releases](https://github.com/uinaf/endelito/releases) and the
-[uinaf Homebrew tap](https://github.com/uinaf/homebrew-tap). It does not deploy
-a running service.
+Endelito publishes its macOS app through
+[GitHub Releases](https://github.com/altaywtf/endelito/releases).
+GitHub ownership is independent of the Apple Developer team: releases retain
+Developer ID signing and notarization by undefined is not a function LLC.
 
-Releases use Developer ID signed, Apple-notarized zip archives. Do not add Mac
-App Store packaging without an explicit product decision.
+The `uinaf-releaser` GitHub App must be installed for `altaywtf/endelito`.
+The workflow scopes its installation token to the repository owner and this
+repository only. The Apple certificate, notarization key, and Developer team
+remain unchanged by the GitHub transfer.
 
-## Signed Package
-
-Release assets are built by:
+## Signed package
 
 ```sh
 CODESIGN_IDENTITY='Developer ID Application: …' make package-release
 ```
 
-The target runs `make build`, signs the app and CLI with hardened runtime and a
-secure timestamp, verifies both signatures, copies `build/Endelito.app`,
-`bin/endelito`, `VERSION`, and README/license material into `dist/Endelito/`,
-then creates `dist/endelito-<version>-macos-<arch>.zip`. Release publishing uses
-`make notarize-release`, which submits that archive to Apple's notary service,
-staples and validates the app ticket, and rebuilds the final archive.
+[Makefile](../Makefile) builds and signs the app with hardened runtime and a
+secure timestamp, verifies its signature, then packages the app, version,
+README, and license in a versioned zip. `make notarize-release` submits the
+archive to Apple, staples and validates the ticket, and rebuilds the zip.
 
-The CLI binary embeds the release version from `VERSION`, so
-`bin/endelito --version` matches the semantic-release version when the archive
-is prepared. `make build-app` also stamps `CFBundleShortVersionString` /
-`CFBundleVersion` in `Info.plist` and replaces `__ENDELITO_VERSION__` in the
-bundled WebKit bridge.
+## Continuous release
 
-## Homebrew Cask
+[ci.yml](../.github/workflows/ci.yml) runs `make verify` on macOS, then evaluates
+Conventional Commits on pushes to `main`. Semantic-release writes `VERSION`
+through a signed App commit, builds and notarizes the app, and uploads a draft
+release. The workflow validates the asset manifest before publishing and
+verifying the immutable-release attestation.
 
-Released versions are installable through the tap; see
-[README](../README.md#install) for the user-facing command.
-
-The cask lives at `Casks/endelito.rb` in
-[uinaf/homebrew-tap](https://github.com/uinaf/homebrew-tap) and points at the
-GitHub Release zip through a `#{version}` URL template. It installs both
-`Endelito.app` and the `endelito` CLI. The release workflow bumps that cask
-only after GitHub verifies the published immutable release.
-
-## Continuous Release
-
-[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) contains both jobs:
-
-- `verify` runs `make smoke-live` on pushes and pull requests, except
-  `[skip ci]` release commits. That target completes the exhaustive repository
-  gate, then reuses its exact CLI and app artifacts for the live
-  CLI → URL scheme → app state proof on the macOS runner.
-- `release` runs after `verify` on normal pushes to `main`.
-
-Both jobs run on standard GitHub-hosted `macos-26` runners (ARM64). The
-separate `update-homebrew-tap` job uses `ubuntu-24.04` (x64).
-
-Semantic-release reads Conventional Commits on `main`. When a release is
-warranted, it:
-
-1. Computes the next version using the `conventionalcommits` preset.
-2. Writes the version to `VERSION` and commits it to `main` through GitHub's
-   signed App commit API.
-3. Signs the app and CLI from that commit, notarizes the archive, staples the
-   app ticket, and builds the final `dist/*.zip`.
-4. Creates the version tag and a draft GitHub Release, then uploads the zip
-   asset from `dist/`.
-5. Validates the draft manifest, publishes the release once, and verifies its
-   immutable-release attestation.
-6. Bumps the cask version and checksum in `uinaf/homebrew-tap` through
-   Homebrew's `brew bump-cask-pr`, including Homebrew's cask audit and style
-   checks before pushing the tap commit.
-
-The `[skip ci]` release commit is intentional: both CI jobs skip it so
-publishing does not recursively trigger another verify and release run.
-
-The release job allows up to 90 minutes for Apple's notarization queue before
-failing. Signing completes before submission; a notarization timeout is not an
-Apple rejection and remains visible in App Store Connect submission history.
+The `[skip ci]` version commit prevents recursive releases. Notarization can
+wait up to 90 minutes; timeout is not an Apple rejection. See
+[Releases](RELEASES.md) for recovery.
 
 ## GitHub Policy
 
@@ -83,7 +40,7 @@ writeback:
 
 - Default branch: `main`.
 - Merge policy: squash merge only; delete branches after merge.
-- Ruleset `protect-main` on the default branch: block deletion and
+- Ruleset `default-branch-baseline` on the default branch: block deletion and
   non-fast-forward updates; require signed commits without a release App bypass.
 - Ruleset `protect-release-tags` on `refs/tags/v*`: block tag deletion and
   updates; require signed tags. `uinaf-releaser` may bypass.
@@ -93,13 +50,13 @@ writeback:
 - Actions policy: selected actions only; allow GitHub-owned actions, verified
   actions, `actions/create-github-app-token@*`,
   `cycjimmy/semantic-release-action@*`,
-  `Homebrew/actions/setup-homebrew@*`, and reusable workflows from
+  and reusable workflows from
   `uinaf/.github/*`.
 - Environment: the release job uses the approval-free `release` environment,
   restricted to workflow runs from `main`.
 - GitHub writes: short-lived `uinaf-releaser` installation token
   (`UINAF_RELEASE_APP_CLIENT_ID` + `UINAF_RELEASE_APP_PRIVATE_KEY`) scoped to
-  `endelito` + `homebrew-tap`.
+  `endelito`.
 - Signing secrets: `APPLE_DEVELOPER_ID_CERTIFICATE_P12_BASE64`,
   `APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD`, and `APPLE_NOTARY_API_KEY_P8`.
 - Notarization variables: `APPLE_NOTARY_API_KEY_ID` and
@@ -121,7 +78,6 @@ path working when changing repository rules.
 - Keep the release job non-cancellable so a tag/release publish is not
   interrupted midway.
 - Keep immutable releases enabled. Upload and validation must finish against a
-  mutable draft; the Homebrew update starts only after publication succeeds.
+  mutable draft before publication.
 - Renovate updates GitHub Actions and mise tools through `renovate.json`,
-  which extends the shared `uinaf/renovate-config` preset. Go has no
-  third-party modules to track.
+  which extends the shared `uinaf/renovate-config` preset.
