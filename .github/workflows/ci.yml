@@ -26,13 +26,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-
-      - name: Verify and smoke live
-        run: make smoke-live
+      - name: Verify app
+        run: make verify
 
   release:
     needs: [verify]
@@ -47,9 +42,6 @@ jobs:
     concurrency:
       group: release-${{ github.repository }}-main
       cancel-in-progress: false
-    outputs:
-      release_ready: ${{ steps.finalized.outputs.ready }}
-      release_version: ${{ steps.release-target.outputs.version }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -57,12 +49,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           ref: main
-
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: false
 
       - name: Import signing assets
         id: signing
@@ -79,12 +65,10 @@ jobs:
         id: release-bot
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ vars.UINAF_RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.UINAF_RELEASE_APP_PRIVATE_KEY }}
-          owner: uinaf
-          repositories: |
-            endelito
-            homebrew-tap
+          client-id: ${{ vars.UINAF_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.UINAF_CI_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: endelito
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -207,62 +191,3 @@ jobs:
             fi
             sleep 5
           done
-
-  update-homebrew-tap:
-    if: needs.release.outputs.release_ready == 'true'
-    needs: [release]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    environment:
-      name: release
-      deployment: false
-    permissions:
-      contents: read
-    steps:
-      - name: Create tap bot token
-        id: tap-bot
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.UINAF_RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.UINAF_RELEASE_APP_PRIVATE_KEY }}
-          owner: uinaf
-          repositories: |
-            endelito
-            homebrew-tap
-          permission-contents: write
-      - name: Check out tap
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: uinaf/homebrew-tap
-          token: ${{ steps.tap-bot.outputs.token }}
-          path: homebrew-tap
-          persist-credentials: false
-          ref: main
-      - name: Prepare cask
-        env:
-          GH_TOKEN: ${{ steps.tap-bot.outputs.token }}
-          VERSION: ${{ needs.release.outputs.release_version }}
-        run: |
-          set -euo pipefail
-          asset="endelito-${VERSION}-macos-arm64.zip"
-          gh release download "v${VERSION}" --repo uinaf/endelito --pattern "$asset" --dir "$RUNNER_TEMP"
-          sha256="$(sha256sum "$RUNNER_TEMP/$asset" | awk '{print $1}')"
-          SHA256="$sha256" ruby -e '
-            path = ARGV.fetch(0)
-            text = File.read(path)
-            text.sub!(/version "[^"]+"/, %(version "#{ENV.fetch("VERSION")}")) or abort "version not found"
-            text.sub!(/sha256 "[0-9a-f]+"/, %(sha256 "#{ENV.fetch("SHA256")}")) or abort "sha256 not found"
-            File.write(path, text)
-          ' homebrew-tap/Casks/endelito.rb
-          grep -F "version \"${VERSION}\"" homebrew-tap/Casks/endelito.rb
-          grep -F "sha256 \"${sha256}\"" homebrew-tap/Casks/endelito.rb
-      - name: Commit cask
-        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
-        with:
-          commit_message: "endelito ${{ needs.release.outputs.release_version }}"
-          repo: uinaf/homebrew-tap
-          branch: main
-          file_pattern: Casks/endelito.rb
-          repository: homebrew-tap
-        env:
-          GITHUB_TOKEN: ${{ steps.tap-bot.outputs.token }}

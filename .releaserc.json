@@ -17,7 +17,7 @@
       {
         "draftRelease": true,
         "assets": [
-          { "path": "dist/*.zip", "label": "Endelito macOS bundle and CLI" }
+          { "path": "dist/*.zip", "label": "Endelito macOS app" }
         ]
       }
     ]

@@ -37,15 +37,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var requestedNavigation: WKNavigation?
     private var currentNavigation: WKNavigation?
 
-    func applicationWillFinishLaunching(_ notification: Notification) {
-        NSAppleEventManager.shared().setEventHandler(
-            self,
-            andSelector: #selector(handleURL(event:replyEvent:)),
-            forEventClass: AEEventClass(kInternetEventClass),
-            andEventID: AEEventID(kAEGetURL)
-        )
-    }
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         buildMainMenu()
@@ -57,62 +48,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         showPlayer(nil)
         return true
-    }
-
-    @objc private func handleURL(event: NSAppleEventDescriptor, replyEvent: NSAppleEventDescriptor) {
-        guard let rawURL = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
-              let components = URLComponents(string: rawURL)
-        else {
-            return
-        }
-
-        handleCommand(components)
-    }
-
-    private func handleCommand(_ components: URLComponents) {
-        let command = components.host ?? components.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        writeDebug([
-            "receivedCommand": command,
-            "receivedAt": ISO8601DateFormatter().string(from: Date())
-        ])
-
-        switch command {
-        case "launch":
-            ensurePlayerLoaded(showWindow: false)
-        case "show":
-            showPlayer(nil)
-        case "hide":
-            hidePlayer(nil)
-        case "quit":
-            NSApp.terminate(nil)
-        case "reload":
-            reload(nil)
-        case "debug":
-            debugPage()
-        case "play":
-            if let source = queryValue("source", in: components) {
-                loadSource(source, playAfterLoad: true)
-            } else {
-                sendPlaybackCommand(command)
-            }
-        case "pause":
-            sendPlaybackCommand(command)
-        case "toggle":
-            sendPlaybackCommand(playbackState.isPlaying ? "pause" : "play")
-        case "source", "soundscape":
-            if let source = queryValue("slug", in: components) ?? queryValue("source", in: components) {
-                loadSource(source, playAfterLoad: playbackState.isPlaying)
-            }
-        case "deeplink":
-            if let url = components.queryItems?.first(where: { $0.name == "url" })?.value {
-                sendDeepLink(url)
-            }
-        default:
-            writeDebug([
-                "ignoredCommand": command,
-                "receivedAt": ISO8601DateFormatter().string(from: Date())
-            ])
-        }
     }
 
     private func ensurePlayerLoaded(showWindow: Bool) {
@@ -418,15 +353,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         evaluate("window.__endelito && window.__endelito.menuCommand(\(jsonString(action)))")
     }
 
-    private func sendDeepLink(_ url: String) {
-        ensurePlayerLoaded(showWindow: false)
-        evaluate("window.__endelito && window.__endelito.deepLink(\(jsonString(url)))")
-    }
-
-    private func queryValue(_ name: String, in components: URLComponents) -> String? {
-        components.queryItems?.first(where: { $0.name == name })?.value
-    }
-
     private func sourceURL(_ source: String) -> URL {
         URL(string: "https://play.endel.io/en/soundscape/\(source)")!
     }
@@ -497,18 +423,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             if let error {
                 NSLog("Endelito JavaScript error: \(error)")
             }
-        }
-    }
-
-    private func debugPage() {
-        ensurePlayerLoaded(showWindow: false)
-        playerView?.evaluateJavaScript("__endelito.debugPage()") { result, error in
-            if let error {
-                self.writeDebug(["error": String(describing: error)])
-                return
-            }
-
-            self.writeDebug(result ?? ["result": "nil"])
         }
     }
 

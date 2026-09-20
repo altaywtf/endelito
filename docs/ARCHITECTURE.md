@@ -1,137 +1,47 @@
 # Architecture
 
-Endelito has two pieces:
+Endelito is a native Swift menu bar app in
+[app/Sources/Endelito](../app/Sources/Endelito). It is an accessory app
+(`LSUIElement`) with no Dock icon. Its bundle identifier remains `local.endelito`
+so existing website sessions continue to work.
 
-- A Go CLI at `cmd/endelito`.
-- A native Swift menu bar app at `app/Sources/Endelito`.
+## Player and controls
 
-The CLI is intentionally thin. It opens the app bundle through Launch Services,
-sends `endelito://` commands through Launch Services, and reads local state.
+The menu owns source selection, playback, reload, and the player window.
+Sources load `https://play.endel.io/en/soundscape/<id>`. Switching sources
+preserves playback state. Focus is the initial source.
 
-The Swift app owns the WebKit session and player window. It is an accessory app
-(`LSUIElement`) with no Dock icon. Bundle id: `local.endelito`.
+The player uses `WKWebView` with `WKWebsiteDataStore.default()`. Do not replace
+it with a nonpersistent store: login/session persistence is part of the app
+contract. Bridge messages are accepted only from trusted Endel origins.
 
-## Control Flow
+[EndelitoBridge.js](../app/Resources/EndelitoBridge.js) supplies website APIs
+expected by the desktop wrapper. It observes media and WebAudio state so the
+menu follows page and system playback changes. Decorative muted videos are
+ignored. Playback clicks stay inside the WebView; the app does not require
+Accessibility or system-wide input access.
 
-1. The user runs `endelito play` (or `bin/endelito play` from a local build).
-2. The CLI opens `endelito://play` with `open -a <selected app>` (or the bundle-id
-   fallback), retaining the selected target through Launch Services delivery.
-3. The app receives the URL through `NSAppleEventManager`, registered in
-   `applicationWillFinishLaunching` before initial open events are dispatched.
-4. The app updates local playback state and sends the command into the WebView.
-5. `endelito source <id-or-name>` loads `https://play.endel.io/en/soundscape/<id>`.
-6. `endelito status` reads `~/Library/Application Support/Endelito/state.json`.
-7. `endelito deeplink <url>` forwards a URL into the web player's deeplink callbacks.
+[PlaybackIntent.swift](../app/Sources/Endelito/PlaybackIntent.swift) assigns
+intent tokens to playback and source changes. Pause and unrelated navigation
+invalidate pending work. Missing controls get two delayed retries; exhaustion
+clears optimistic state and writes an error to `debug.json`. Open the player,
+resolve its page state, and retry.
 
-## App discovery
+## Resources and diagnostics
 
-The CLI looks for `Endelito.app` in this order:
+[app/Resources/sources.json](../app/Resources/sources.json) owns known source IDs
+and aliases. The build copies it into the app bundle. New or renamed soundscapes
+need a catalog update.
 
-1. `ENDELITO_APP` override
-2. `../build/Endelito.app` relative to the CLI binary (local repo builds)
-3. `/Applications/Endelito.app`
-4. `~/Applications/Endelito.app`
-5. Launch Services bundle id `local.endelito`
+State and playback diagnostics are written to `state.json` and `debug.json`
+under `~/Library/Application Support/Endelito/`. These files can include website
+URLs; sanitize them before sharing.
 
-Discovery is performed for every command; a running copy does not bypass an
-explicit target. A missing `ENDELITO_APP` fails instead of using another copy.
-A successful `open` exit confirms transport acceptance, not playback.
+[Makefile](../Makefile) owns bundle assembly, installation, and signing targets.
+It stamps the app and bridge from `VERSION` and generates icons with
+[GenerateAssets.swift](../tools/GenerateAssets.swift). Generated resources stay
+in `build/`, outside git.
 
-`make install` copies the built app into `/Applications` and the CLI into
-`$(PREFIX)/bin` (default Homebrew prefix when present, otherwise `/usr/local`).
-
-## WebView
-
-The player uses `WKWebView` with `WKWebsiteDataStore.default()`. That keeps
-login/session state in WebKit-managed storage for this app, keyed by the app
-identity. Rebuilding `Endelito.app` with the same bundle identifier keeps using
-the same WebKit session store.
-
-Do not switch to `.nonPersistent()` or a custom throwaway data store for the
-player. Session persistence is part of the app contract.
-
-Bridge script messages are accepted only from trusted Endel web origins
-(`play.endel.io` / `*.endel.io`).
-
-- The current default page is the Focus source.
-- Source selection is ID-based and matches Endel's visible source icons.
-- The menu bar Source submenu and `source <id-or-name>` load a known
-  soundscape route and preserve the current playback state: the new route
-  starts after load only when playback was already running.
-- `play <id-or-name>` loads that route and starts it.
-- The supported IDs are the Focus, Relax, and Sleep soundscapes listed in the
-  shared catalog.
-
-The app injects the bundled
-[EndelitoBridge.js](../app/Resources/EndelitoBridge.js) compatibility shim for
-the website APIs used by the desktop wrapper, including playback state, menu
-commands, source route changes, and deeplink callbacks. The shim also observes
-controllable media playback and WebAudio context state so the CLI state can
-follow page-driven or system-driven changes such as AirPlay pausing playback.
-Decorative muted looping videos are ignored.
-
-The `PlaybackIntent` owner assigns tokens to explicit commands and source
-changes. Pause and unrelated document navigation invalidate queued work and
-in-flight JavaScript callbacks. Successful attempts consume intent. A missing
-button gets at most two delayed retries without reloading the page; exhaustion
-clears optimistic playback state and writes a recoverable error to `debug.json`.
-A fresh play command can retry.
-
-Native-click idempotence uses the same media/WebAudio observation as bridge
-state reporting. Unknown playback state remains actionable.
-
-Playback targets the player button inside the WebView. The app intentionally
-avoids Accessibility permissions and system-wide input events.
-
-## Shared source catalog
-
-Known soundscapes and aliases live in one file:
-
-- [internal/sources/sources.json](../internal/sources/sources.json)
-
-Go embeds that file via `endelito/internal/sources`. The app build copies it
-into `Endelito.app/Contents/Resources/sources.json` for the Swift menu and
-validation path.
-
-## Local Files
-
-- State: `~/Library/Application Support/Endelito/state.json`
-- Debug page dump: `~/Library/Application Support/Endelito/debug.json`
-- App bundle (build): `build/Endelito.app`
-- App bundle (installed): `/Applications/Endelito.app`
-- CLI binary (build): `bin/endelito`
-- CLI binary (installed): `$(brew --prefix)/bin/endelito` when Homebrew is
-  present, otherwise `/usr/local/bin/endelito`
-
-## Icons and versioning
-
-Resources are bundled during `make build-app`. The WebKit bridge is copied from
-[EndelitoBridge.js](../app/Resources/EndelitoBridge.js) with
-`__ENDELITO_VERSION__` replaced by `RELEASE_VERSION`, and icons are generated by
-[GenerateAssets.swift](../tools/GenerateAssets.swift). `Info.plist` version
-fields are stamped from the same `RELEASE_VERSION` (usually `VERSION`).
-
-`make verify` runs `node --check`, bridge contract tests, and compiled Swift
-intent tests before building so
-page-control JavaScript fails fast outside the app. `make smoke-live` runs that
-exhaustive gate first and then reuses its exact build artifacts for the live
-launch and command proof.
-
-Generated outputs include:
-
-- `AppIcon.icns`
-- `MenuBarIconTemplate.png`
-- Intermediate `AppIcon.iconset`
-
-Generated assets are build outputs and are not committed.
-
-## Current Limits
-
-- Source selection uses a checked-in ID list from the web player's current
-  source icons. New or renamed sources need a catalog update in
-  `internal/sources/sources.json`.
-- Playback from CLI depends on WebKit accepting the in-app control path. Manual
-  WebView clicks are the baseline fallback.
-- Login, purchase, notifications, and OAuth/deep-link auth flows need real-use
-  validation before treating the app as a daily-driver replacement.
-- Updates come from GitHub Releases / Homebrew; there is no in-app updater.
+[Verification](../CONTRIBUTING.md#validate) covers deterministic playback and
+bundle integrity. Website login, subscription prompts, and audible playback
+require real-use checks. Updates are downloaded from GitHub Releases.

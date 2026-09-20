@@ -2,94 +2,62 @@
 
 ## Requirements
 
-- macOS
-- Mise for cached local verification (optional)
-- Go 1.26 or newer
-- Node.js for bridge syntax and contract checks
-- Xcode command line tools with `swift`, `xcrun`, `iconutil`, and `codesign`
+- macOS 13 or later
+- Node.js for bridge and catalog checks
+- Xcode command line tools (`swift`, `xcrun`, `iconutil`, `codesign`)
+- Mise for cached verification (optional)
 
 ## Build
 
 ```sh
 make build
-```
-
-Install into Applications and PATH:
-
-```sh
 make install
 ```
 
-See [README](README.md) for user-facing CLI commands and [Architecture](docs/ARCHITECTURE.md) for the app, state file, URL scheme, and WebKit session model.
+The app is built in `build/Endelito.app`; installation copies it to Applications.
+See [Architecture](docs/ARCHITECTURE.md) for playback and WebKit session behavior.
 
 ## Validate
-
-Run these before pushing:
-
-```sh
-mise run verify
-mise run --force verify # explicitly run the exhaustive gate
-```
-
-Without Mise, run the same exhaustive gate directly:
 
 ```sh
 make verify
 ```
 
-For UI changes, also launch the app and check the real state path:
+The gate checks JavaScript syntax, bridge contracts, deterministic Swift
+playback intent, the source catalog, and the built app's resources, version,
+menu-bar identity, and signature. `mise run verify` caches successful results;
+`mise run --force verify` runs the full gate.
 
-```sh
-make smoke-live
-```
+For UI changes, open `build/Endelito.app` and check its menu bar item:
 
-The live target runs the exhaustive gate first and reuses its app and CLI
-artifacts for the launch proof.
+1. Choose **Show Player** and sign in if needed.
+2. Select a different Source while paused; it should remain paused.
+3. Play, then select another source; playback should resume after loading.
+4. Pause while a source loads; it should stay paused when loading finishes.
+5. Reload, close and reopen the player, then quit from the menu.
 
-For environment and runtime diagnostics:
+Run one copy at a time: builds share the `local.endelito` bundle identifier,
+WebKit storage, and diagnostics. Automated checks do not establish audible
+playback or website authentication. Use `make doctor` for local diagnostics.
 
-```sh
-make doctor
-```
+## Development notes
 
-## Releases
-
-Use Conventional Commits (`feat:`, `fix:`, `docs:`, …); they drive versions.
-
-Successful pushes to `main` evaluate commits after `verify` passes. The release
-job mints a short-lived `uinaf-releaser` token inside the `release` Environment,
-signs/notarizes, creates the GitHub Release, and updates the Homebrew cask. See
-[Releases](docs/RELEASES.md) and [Distribution](docs/DISTRIBUTION.md).
-
-## Pull Requests
-
-- Create a focused branch from current `main` and open a pull request against `main`.
-- Use the repo pull request template.
-- Include meaningful verification in the PR description.
-- Include the review aid that best explains a non-trivial change: a focused diagram, labeled screenshot, or sanitized input/output example.
-- Keep vulnerability reports out of public issues; use [Security](SECURITY.md).
-
-## Development Notes
-
-- `ENDELITO_APP=/path/to/Endelito.app endelito launch` selects the app for every
-  command, including when another copy is running. Missing overrides fail.
+- [sources.json](app/Resources/sources.json) owns soundscape IDs and aliases.
 - `make test-playback` compiles the production intent owner and extracted
-  AppDelegate command, timer, click-callback, and navigation methods. Deterministic
-  fixtures cover cancellation, stale callbacks, duplicate attempts, cold playback,
-  and retry limits without AppKit or a live WebView.
-- Go transport tests build the actual CLI and replace `open`/`pgrep` with local
-  fixtures; they do not launch an app. Live smoke sends commands through the CLI
-  and starts with a cold non-default source command; stop the candidate app first.
-  Its state checks do not establish audible playback or two-copy routing.
-- The app stores CLI-readable state at `~/Library/Application Support/Endelito/state.json`.
-- `bin/endelito debug` writes page inspection data next to the state file.
-- Soundscape IDs and aliases live in `internal/sources/sources.json`; update that catalog instead of duplicating lists in Go or Swift.
+  callback/navigation methods with deterministic fixtures. It covers
+  cancellation, stale callbacks, duplicate attempts, and retry limits.
+- Diagnostics are written under `~/Library/Application Support/Endelito/`.
+  Remove private page/account details before sharing them.
 - Build artifacts are ignored by git.
 
-## Dependency automerge
+## Pull requests and releases
 
-- Eligible Renovate updates use GitHub auto-merge after required checks: verify and scan / Gitleaks, scan / TruffleHog, scan / Actionlint, scan / Zizmor.
-- Checks are non-strict; repository admins and the existing release App retain direct writes through
-  a bypass limited to the check ruleset. Renovate has no bypass.
-- Shared release-age and major/digest rules remain unchanged. Add new voting
-  checks to the ruleset; workflow presence alone does not require them.
+Use Conventional Commits. Focus pull requests on one change, include relevant
+verification, and follow the repository template. Report vulnerabilities through
+[Security](SECURITY.md).
+
+Pushes to `main` evaluate a signed, notarized release after verification passes.
+See [Releases](docs/RELEASES.md) for credentials and recovery.
+
+`make uninstall` also removes the legacy CLI from `PREFIX/bin` (the Homebrew
+prefix by default). Set `PREFIX` if the old CLI was installed elsewhere.

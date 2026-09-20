@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a focused improvement to the menu bar app or CLI.
+description: Propose a focused improvement to the menu bar app.
 title: "feat: "
 labels:
   - enhancement
@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Endelito stays a small menu bar WebKit player plus CLI. Proposals should fit that product boundary.
+        Endelito stays a small menu bar WebKit player. Proposals should fit that product boundary.
   - type: textarea
     id: problem
     attributes:
@@ -33,5 +33,5 @@ body:
       options:
         - label: I searched existing issues for this request.
           required: true
-        - label: This request keeps Endelito within its menu bar app and CLI scope.
+        - label: This request keeps Endelito within its menu bar app scope.
           required: true

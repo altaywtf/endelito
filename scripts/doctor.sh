@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/build/Endelito.app"
-CLI="$ROOT/bin/endelito"
 STATE="$HOME/Library/Application Support/Endelito/state.json"
 missing=0
 
@@ -18,15 +17,9 @@ check_command() {
 
 printf 'doctor: repo %s\n' "$ROOT"
 
-for command in go swift xcrun iconutil codesign plutil node; do
+for command in swift xcrun iconutil codesign plutil node; do
   check_command "$command"
 done
-
-if [[ -x "$CLI" ]]; then
-  printf 'doctor: cli ok (%s)\n' "$CLI"
-else
-  printf 'doctor: cli missing; run make build\n'
-fi
 
 if [[ -x "$APP/Contents/MacOS/Endelito" ]]; then
   printf 'doctor: app ok (%s)\n' "$APP"
@@ -46,7 +39,7 @@ if [[ -f "$STATE" && -x "$(command -v node 2>/dev/null)" ]]; then
 elif [[ -f "$STATE" ]]; then
   printf 'doctor: state present but not parsed; node is missing (%s)\n' "$STATE"
 else
-  printf 'doctor: state missing; run bin/endelito launch\n'
+  printf 'doctor: state missing; open build/Endelito.app\n'
 fi
 
 if [[ "$missing" != "0" ]]; then

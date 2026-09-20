@@ -10,19 +10,6 @@
   <string>local.endelito</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
-  <key>CFBundleURLTypes</key>
-  <array>
-    <dict>
-      <key>CFBundleTypeRole</key>
-      <string>Editor</string>
-      <key>CFBundleURLName</key>
-      <string>Endelito</string>
-      <key>CFBundleURLSchemes</key>
-      <array>
-        <string>endelito</string>
-      </array>
-    </dict>
-  </array>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>

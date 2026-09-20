@@ -2,7 +2,7 @@
 
 ## Reporting
 
-Please use [GitHub private vulnerability reporting](https://github.com/uinaf/endelito/security/advisories/new) instead of opening a public issue.
+Please use [GitHub private vulnerability reporting](https://github.com/altaywtf/endelito/security/advisories/new) instead of opening a public issue.
 
 Include the affected version, impact, reproduction steps, and any relevant logs with credentials and personal data removed.
 
@@ -12,7 +12,6 @@ Endelito is a local macOS helper. The main sensitive surfaces are:
 
 - Website session data stored by WebKit.
 - Local state under `~/Library/Application Support/Endelito/`.
-- The `endelito://` URL scheme used for local CLI commands.
 
 ## Supported Versions
 
