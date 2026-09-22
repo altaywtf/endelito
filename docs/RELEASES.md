@@ -19,7 +19,8 @@ Conventional Commits drive the bump:
 
 1. `verify` runs with read-only credentials
 2. Protected `release` Environment imports Apple signing assets, then mints a
-   short-lived `uinaf-ci` installation token scoped to `endelito`
+   short-lived `uinaf-ci` installation token scoped to `endelito`; minting
+   after the import keeps the token's one-hour lifetime for the release writes
 3. `semantic-release` commits `VERSION` through GitHub's signed App commit API,
    signs/notarizes from that commit, then creates the version tag and a mutable
    draft GitHub Release containing the notarized zip; exact-tag lookup fails if
