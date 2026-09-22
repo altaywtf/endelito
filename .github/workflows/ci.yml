@@ -59,8 +59,6 @@ jobs:
           APPLE_NOTARY_API_KEY_ID: ${{ vars.APPLE_NOTARY_API_KEY_ID }}
         run: scripts/import-signing-assets.sh
 
-      # Mint after signing-asset import so the ~1h installation token is not
-      # burned before authenticated release writes.
       - name: Create release bot token
         id: release-bot
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
