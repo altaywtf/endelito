@@ -44,7 +44,8 @@ writeback:
   non-fast-forward updates; require signed commits without a release App bypass.
 - Ruleset `protect-release-tags` on `refs/tags/v*`: block tag deletion and
   updates; require signed tags. `uinaf-ci` may bypass.
-- Required verification and scan checks use a separate non-strict ruleset.
+- The required `verify` check, which ends with the push-time scan, uses a
+  separate non-strict ruleset.
   Admins and `uinaf-ci` bypass only this check rule, preserving signed
   release-version writeback. Renovate has no bypass.
 - Actions policy: all actions are allowed; full commit SHA pins are enforced.
@@ -63,7 +64,7 @@ path working when changing repository rules.
 
 ## Workflow Maintenance
 
-- Keep workflow actions and the shared scan caller pinned to full commit SHAs
+- Keep workflow actions and the shared scan action pinned to full commit SHAs
   with same-line version comments. The [personal Renovate preset](https://github.com/altaywtf/.github/blob/main/renovate-config.json)
   updates `uinaf/.github` pins along with other Actions dependencies.
 - Keep semantic-release and plugins pinned in the workflow `extra_plugins`
