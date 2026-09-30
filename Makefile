@@ -74,6 +74,7 @@ run: build
 
 install: build
 	ditto --rsrc --extattr "$(APP_DIR)" "$(APPLICATIONS_DIR)/$(APP_NAME).app"
+	rm -f "$(PREFIX)/bin/endelito"
 	@printf 'install: %s\n' "$(APPLICATIONS_DIR)/$(APP_NAME).app"
 	@printf 'install: open the app once from Applications if Launch Services has not registered it yet\n'
 
