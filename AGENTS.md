@@ -38,13 +38,22 @@ mise run verify
 
 This skips unchanged sources after a successful result. Use
 `mise run --force verify` for an explicit full pass. `make verify` remains the
-exhaustive underlying repository gate.
+exhaustive underlying repository gate. Docs-only changes need no build or UI
+check.
 
 For UI changes, follow [the native menu checks](CONTRIBUTING.md#validate).
 Run one app copy at a time; checkouts share its bundle ID and website storage.
 
 Use `make doctor` for a quick local environment, build-artifact, process, and
 state-file snapshot before deeper debugging.
+
+## Delivery
+
+Maintainers push to `main` directly or squash-merge a PR. Every push to `main`
+runs `verify`, then the release job: `feat`, `fix`, `perf`, `revert` and
+breaking commits publish a signed, notarized GitHub Release; other types
+publish nothing ([Releases](docs/RELEASES.md)). Published `v*` tags and
+releases are immutable.
 
 ## Repository skills
 

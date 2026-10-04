@@ -11,9 +11,9 @@ Conventional Commits drive the bump:
 | Commit type | Release |
 |---|---|
 | `feat:` | minor |
-| `fix:` / `perf:` / `refactor:` | patch |
+| `fix:` / `perf:` / `revert:` | patch |
 | `feat!:` / breaking change | major |
-| `docs:` / `test:` / `chore:` / `build:` / `ci:` | none |
+| `docs:` / `test:` / `chore:` / `build:` / `ci:` / `refactor:` | none |
 
 ## Pipeline
 
