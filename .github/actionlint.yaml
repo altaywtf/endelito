@@ -1,0 +1,5 @@
+paths:
+  # actionlint 1.7.12 rejects the concurrency `queue` key; drop once a release knows it.
+  "**/.github/workflows/ci.yml":
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
