@@ -73,6 +73,8 @@ path working when changing repository rules.
   upload release assets.
 - Keep the release job non-cancellable so a tag/release publish is not
   interrupted midway.
+- Keep the release job on the run's commit, not `ref: main`, so it never
+  builds a later push whose `verify` is still running.
 - Keep immutable releases enabled. Upload and validation must finish against a
   mutable draft before publication.
 - Renovate updates GitHub Actions and mise tools through `renovate.json`,

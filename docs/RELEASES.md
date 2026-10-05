@@ -28,6 +28,12 @@ Conventional Commits drive the bump:
 4. The workflow validates the draft asset manifest, publishes it once, and
    verifies GitHub's immutable-release attestation
 
+Every push's `verify` runs to completion, and release runs queue one at a
+time. A release run checks out the commit its own `verify` passed. If `main`
+has moved on by then, semantic-release stops with "The local branch main is
+behind the remote one" and publishes nothing; a later push's run releases the
+pending commits.
+
 Sources of truth: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [Distribution](DISTRIBUTION.md).
 
 ## Credentials
@@ -59,11 +65,16 @@ Post-merge (first real release after credential or workflow changes):
 
 ## Recover a stuck publish
 
-If notarization, upload, or publication fails after the tag exists, fix the
-underlying failure and rerun the failed workflow. The workflow discovers the
-single mutable draft on `main`, validates its asset manifest, and publishes it
-without choosing a new version. Published releases are verified without further
-mutation.
+If upload or publication fails after the tag exists, fix the underlying failure
+and rerun the failed workflow. The workflow discovers the single mutable draft
+on `main`, validates its asset manifest, and publishes it without choosing a new
+version. Published releases are verified without further mutation.
+
+A rerun checks out the failed run's commit. Once the failed run has written its
+`VERSION` commit, `main` has moved on, so semantic-release skips and only the
+draft recovery above runs. A failure between that commit and the tag, such as
+notarization, therefore publishes nothing on rerun; push any commit to `main`
+to release the pending commits.
 
 Never delete or move a published `v*` tag. Published releases and their assets
 are immutable; only an unpublished draft may be repaired or deleted.
