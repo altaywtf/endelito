@@ -8,8 +8,8 @@ detail in `docs/`.
 - [README](README.md): product shape and installation
 - [Contributing](CONTRIBUTING.md): setup, verify, pull requests
 - [Architecture](docs/ARCHITECTURE.md): control model, catalog, WebKit bridge
-- [Releases](docs/RELEASES.md): Conventional Commits publish path and recovery
-- [Distribution](docs/DISTRIBUTION.md): signing and GitHub policy
+- [Release runbook](https://app.notion.com/p/3e5e75710b5281999cc8c6a31e5a9e5c) (Notion, Endelito releases): publish path,
+  recovery, signing, and GitHub policy
 - [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md): private vulnerability reporting
 
 ## Hard rules
@@ -28,7 +28,7 @@ detail in `docs/`.
 - When changing menu controls, bundle IDs, state paths, or build
   targets, update README, Contributing, and Architecture in the same change.
 - When changing signing, notarization, release credentials, workflow pins, or
-  GitHub release policy, update Releases and Distribution in the same change.
+  GitHub release policy, update the release runbook in the same change.
 
 ## Verification
 
@@ -52,8 +52,20 @@ state-file snapshot before deeper debugging.
 Maintainers push to `main` directly or squash-merge a PR. Every push to `main`
 runs `verify`, then the release job: `feat`, `fix`, `perf`, `revert` and
 breaking commits publish a signed, notarized GitHub Release; other types
-publish nothing ([Releases](docs/RELEASES.md)). Published `v*` tags and
-releases are immutable.
+publish nothing. `[skip ci]` skips both jobs. Published `v*` tags and releases
+are immutable; to recover a failed publish, fix the cause and rerun the failed
+workflow.
+
+Release workflow invariants:
+
+- Pin actions and the shared scan action to full commit SHAs with same-line
+  version comments.
+- Pin semantic-release and its plugins in the workflow's `extra_plugins`
+  block, not as repository Node dependencies; keep `@semantic-release/github`
+  at `12.0.9` or newer so Node 24 runners can upload assets.
+- Keep the release job non-cancellable and on the run's own commit, not
+  `ref: main`.
+- Upload and validate against a mutable draft before publishing.
 
 ## Repository skills
 
