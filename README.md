@@ -34,10 +34,8 @@ make verify
 make doctor
 ```
 
-`mise run verify` skips unchanged sources after a successful check.
-`make verify` always runs bridge, playback-intent, catalog, and app-bundle checks.
-Menu interactions and audible playback need a GUI session; see
-[Contributing](CONTRIBUTING.md#validate).
+`mise run verify` skips unchanged sources. Menu interactions and audible
+playback need a GUI session; see [Contributing](CONTRIBUTING.md#validate).
 
 ## Documentation
 

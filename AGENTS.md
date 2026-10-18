@@ -1,7 +1,6 @@
 # Agent Guide
 
-This repo is small. Keep the top level navigational and put implementation
-detail in `docs/`.
+Keep this file navigational; implementation detail lives in `docs/`.
 
 ## Start Here
 
@@ -14,14 +13,11 @@ detail in `docs/`.
 
 ## Hard rules
 
-- Stay a menu bar WebKit player; do not expand into a full desktop
-  clone.
-- Do not add Accessibility, global input monitoring, or system-wide event
-  posting without an explicit design decision and user approval.
+- Endelito is a menu bar WebKit player, not a full desktop client.
+- Accessibility, global input monitoring, and system-wide event posting need
+  an explicit design decision and user approval.
 - Keep the player on `WKWebsiteDataStore.default()` so website login/session
   data persists across app restarts.
-- Keep generated build outputs out of git (`build/`, generated app
-  resources).
 - Keep substantial page JavaScript in
   [EndelitoBridge.js](app/Resources/EndelitoBridge.js), not Swift string
   literals.
@@ -36,16 +32,10 @@ detail in `docs/`.
 mise run verify
 ```
 
-This skips unchanged sources after a successful result. Use
-`mise run --force verify` for an explicit full pass. `make verify` remains the
-exhaustive underlying repository gate. Docs-only changes need no build or UI
-check.
-
-For UI changes, follow [the native menu checks](CONTRIBUTING.md#validate).
-Run one app copy at a time; checkouts share its bundle ID and website storage.
-
-Use `make doctor` for a quick local environment, build-artifact, process, and
-state-file snapshot before deeper debugging.
+It skips unchanged sources; `mise run --force verify` runs the full
+`make verify` gate. Docs-only changes need no build or UI check. UI changes
+need [the native menu checks](CONTRIBUTING.md#validate). `make doctor`
+snapshots the environment, build, processes, and state files for debugging.
 
 ## Delivery
 
@@ -61,10 +51,9 @@ Release workflow invariants:
 - Pin actions and the shared scan action to full commit SHAs with same-line
   version comments.
 - Pin semantic-release and its plugins in the workflow's `extra_plugins`
-  block, not as repository Node dependencies; keep `@semantic-release/github`
-  at `12.0.9` or newer so Node 24 runners can upload assets.
-- Keep the release job non-cancellable and on the run's own commit, not
-  `ref: main`.
+  block; keep `@semantic-release/github` at `12.0.9` or newer so Node 24
+  runners can upload assets.
+- Keep the release job non-cancellable and on the run's own commit.
 - Upload and validate against a mutable draft before publishing.
 
 ## Repository skills

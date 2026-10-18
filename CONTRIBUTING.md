@@ -37,18 +37,18 @@ For UI changes, open `build/Endelito.app` and check its menu bar item:
 5. Reload, close and reopen the player, then quit from the menu.
 
 Run one copy at a time: builds share the `local.endelito` bundle identifier,
-WebKit storage, and diagnostics. Automated checks do not establish audible
-playback or website authentication. Use `make doctor` for local diagnostics.
+WebKit storage, and diagnostics. Audible playback and website login are only
+proven by hand.
 
 ## Issues and product boundaries
 
-Keep feature requests within the menu bar WebKit player scope. Bug reports
-should include macOS version, Mac architecture, install method, app version,
-and sanitized `make doctor` output. Remove credentials, cookies, account
-details, and private page content before sharing diagnostics.
+Feature requests stay within the menu bar WebKit player. Bug reports include
+macOS version, Mac architecture, install method, app version, and `make doctor`
+output.
 
-WebKit session data and files under `~/Library/Application Support/Endelito/`
-are sensitive. Keep debug output local and out of git. Adding Accessibility,
+WebKit session data and diagnostics under
+`~/Library/Application Support/Endelito/` can hold credentials, cookies,
+account details, and page URLs; sanitize them before sharing. Adding Accessibility,
 global input monitoring, screen recording, key logging, system-wide event
 posting, network services, or remote control endpoints requires an explicit
 security review and approval.
@@ -56,17 +56,14 @@ security review and approval.
 ## Development notes
 
 - [sources.json](app/Resources/sources.json) owns soundscape IDs and aliases.
-- `make test-playback` compiles the production intent owner and extracted
-  callback/navigation methods with deterministic fixtures. It covers
-  cancellation, stale callbacks, duplicate attempts, and retry limits.
-- Diagnostics are written under `~/Library/Application Support/Endelito/`.
-  Remove private page/account details before sharing them.
-- Build artifacts are ignored by git.
+- `make test-playback` runs the production playback intent and callback code
+  against deterministic fixtures: cancellation, stale callbacks, duplicate
+  attempts, and retry limits.
 
 ## Pull requests and releases
 
-Use Conventional Commits. Focus pull requests on one change, include relevant
-verification, and follow the repository template. Report vulnerabilities through
+Use Conventional Commits and keep each pull request to one change. Report
+vulnerabilities through
 [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md).
 
 Pushes to `main` evaluate a signed, notarized release after verification passes.
