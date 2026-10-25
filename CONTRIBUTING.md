@@ -10,10 +10,6 @@ make build     # build/Endelito.app, ad-hoc signed
 make install   # copies it to /Applications; set APPLICATIONS_DIR to change
 ```
 
-`make install` and `make uninstall` also remove the legacy CLI from
-`PREFIX/bin` (the Homebrew prefix by default). Set `PREFIX` if the old CLI was
-installed elsewhere.
-
 ## Validate
 
 ```sh

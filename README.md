@@ -22,9 +22,4 @@ WebKit session data, `state.json` and `debug.json` under
 `~/Library/Application Support/Endelito/` can hold cookies, account details,
 and page URLs. Sanitize them before sharing.
 
-## Documentation
-
-- [Contributing](CONTRIBUTING.md)
-- [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md)
-
 [MIT License](LICENSE).
