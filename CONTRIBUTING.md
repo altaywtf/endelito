@@ -15,7 +15,7 @@ make install
 ```
 
 The app is built in `build/Endelito.app`; installation copies it to Applications.
-See [Architecture](docs/ARCHITECTURE.md) for playback and WebKit session behavior.
+See [Architecture](README.md#architecture) for playback and WebKit session behavior.
 
 ## Validate
 

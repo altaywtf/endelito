@@ -1,12 +1,12 @@
 # Agent Guide
 
-Keep this file navigational; implementation detail lives in `docs/`.
+Keep this file navigational; implementation detail lives in the README and Contributing.
 
 ## Start Here
 
 - [README](README.md): product shape and installation
+- [Architecture](README.md#architecture): control model, catalog, WebKit bridge
 - [Contributing](CONTRIBUTING.md): setup, verify, pull requests
-- [Architecture](docs/ARCHITECTURE.md): control model, catalog, WebKit bridge
 - [Release runbook](https://app.notion.com/p/3e5e75710b5281999cc8c6a31e5a9e5c) (Notion, Endelito releases): publish path,
   recovery, signing, and GitHub policy
 - [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md): private vulnerability reporting
@@ -22,7 +22,7 @@ Keep this file navigational; implementation detail lives in `docs/`.
   [EndelitoBridge.js](app/Resources/EndelitoBridge.js), not Swift string
   literals.
 - When changing menu controls, bundle IDs, state paths, or build
-  targets, update README, Contributing, and Architecture in the same change.
+  targets, update README and Contributing in the same change.
 - When changing signing, notarization, release credentials, workflow pins, or
   GitHub release policy, update the release runbook in the same change.
 
