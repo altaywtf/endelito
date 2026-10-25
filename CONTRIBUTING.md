@@ -1,32 +1,26 @@
 # Contributing
 
-## Requirements
-
-- macOS 13 or later
-- Node.js for bridge and catalog checks
-- Xcode command line tools (`swift`, `xcrun`, `iconutil`, `codesign`)
-- Mise for cached verification (optional)
+Requires macOS 13 or later, Xcode command line tools, and Node.js. Mise is
+optional.
 
 ## Build
 
 ```sh
-make build
-make install
+make build     # build/Endelito.app, ad-hoc signed
+make install   # copies it to /Applications; set APPLICATIONS_DIR to change
 ```
 
-The app is built in `build/Endelito.app`; installation copies it to Applications.
-See [Architecture](README.md#architecture) for playback and WebKit session behavior.
+`make install` and `make uninstall` also remove the legacy CLI from
+`PREFIX/bin` (the Homebrew prefix by default). Set `PREFIX` if the old CLI was
+installed elsewhere.
 
 ## Validate
 
 ```sh
-make verify
+make verify               # the gate
+mise run verify           # the gate, skipped when sources are unchanged
+mise run --force verify   # the gate, never skipped
 ```
-
-The gate checks JavaScript syntax, bridge contracts, deterministic Swift
-playback intent, the source catalog, and the built app's resources, version,
-menu-bar identity, and signature. `mise run verify` caches successful results;
-`mise run --force verify` runs the full gate.
 
 For UI changes, open `build/Endelito.app` and check its menu bar item:
 
@@ -40,33 +34,28 @@ Run one copy at a time: builds share the `local.endelito` bundle identifier,
 WebKit storage, and diagnostics. Audible playback and website login are only
 proven by hand.
 
-## Issues and product boundaries
+## Invariants
 
-Feature requests stay within the menu bar WebKit player. Bug reports include
-macOS version, Mac architecture, install method, app version, and `make doctor`
-output.
+- Endelito is a menu bar WebKit player, not a full desktop client.
+- Keep the bundle identifier `local.endelito`; existing website sessions
+  depend on it.
+- Keep the player on `WKWebsiteDataStore.default()` so website sessions
+  persist across restarts.
+- Keep page JavaScript in
+  [EndelitoBridge.js](app/Resources/EndelitoBridge.js), not Swift string
+  literals.
+- New or renamed soundscapes need an entry in
+  [sources.json](app/Resources/sources.json).
+- Accessibility, global input monitoring, screen recording, key logging,
+  system-wide event posting, network services, and remote control endpoints
+  need an explicit security review and approval.
 
-WebKit session data and diagnostics under
-`~/Library/Application Support/Endelito/` can hold credentials, cookies,
-account details, and page URLs; sanitize them before sharing. Adding Accessibility,
-global input monitoring, screen recording, key logging, system-wide event
-posting, network services, or remote control endpoints requires an explicit
-security review and approval.
+## Issues and pull requests
 
-## Development notes
-
-- [sources.json](app/Resources/sources.json) owns soundscape IDs and aliases.
-- `make test-playback` runs the production playback intent and callback code
-  against deterministic fixtures: cancellation, stale callbacks, duplicate
-  attempts, and retry limits.
-
-## Pull requests and releases
+Bug reports include macOS version, Mac architecture, install method, app
+version, and `make doctor` output, sanitized as in
+[Privacy](README.md#privacy).
 
 Use Conventional Commits and keep each pull request to one change. Report
 vulnerabilities through
 [Security](https://github.com/altaywtf/.github/blob/main/SECURITY.md).
-
-Pushes to `main` evaluate a signed, notarized release after verification passes.
-
-`make install` and `make uninstall` also remove the legacy CLI from `PREFIX/bin`
-(the Homebrew prefix by default). Set `PREFIX` if the old CLI was installed elsewhere.
