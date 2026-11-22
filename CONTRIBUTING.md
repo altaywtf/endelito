@@ -32,14 +32,13 @@ proven by hand.
 
 ## Invariants
 
-- Endelito is a menu bar WebKit player, not a full desktop client.
+- Endelito stays a menu bar WebKit player.
 - Keep the bundle identifier `local.endelito`; existing website sessions
   depend on it.
 - Keep the player on `WKWebsiteDataStore.default()` so website sessions
   persist across restarts.
 - Keep page JavaScript in
-  [EndelitoBridge.js](app/Resources/EndelitoBridge.js), not Swift string
-  literals.
+  [EndelitoBridge.js](app/Resources/EndelitoBridge.js).
 - New or renamed soundscapes need an entry in
   [sources.json](app/Resources/sources.json).
 - Accessibility, global input monitoring, screen recording, key logging,
